@@ -50,6 +50,10 @@ function summarizeShopMetrics(rows: Array<{ traffic: number; gmv: number; gsv: n
   };
 }
 
+function summarizeProductMetrics(rows: Array<{ traffic: number; gmv: number; gsv: number; orders: number; refundAmount: number }>): MetricSnapshot {
+  return summarizeShopMetrics(rows);
+}
+
 async function promotionSummary(shopId: string, start: Date, end: Date) {
   const rows = await prisma.promotionMetric.findMany({ where: { shopId, date: { gte: start, lte: end } } });
   const spend = rows.reduce((sum, row) => sum + row.spend, 0);
@@ -83,15 +87,27 @@ export async function buildReportFromDb(params: {
     return buildReportSchema();
   }
 
-  const currentStart = toDate(params.currentStart, defaultCurrentStart);
-  const currentEnd = toDate(params.currentEnd, defaultCurrentEnd);
-  const previousStart = toDate(params.previousStart, defaultPreviousStart);
-  const previousEnd = toDate(params.previousEnd, defaultPreviousEnd);
+  const [latestCurrentBatch, latestPreviousBatch] = await Promise.all([
+    prisma.uploadBatch.findFirst({
+      where: { shopId: shop.id, periodType: "current", status: { not: "failed" } },
+      orderBy: { periodEnd: "desc" }
+    }),
+    prisma.uploadBatch.findFirst({
+      where: { shopId: shop.id, periodType: "previous", status: { not: "failed" } },
+      orderBy: { periodEnd: "desc" }
+    })
+  ]);
 
-  const [currentShopRows, previousShopRows, products, promotionPlans, trafficSources, userProfiles, currentPromotion, previousPromotion] = await Promise.all([
+  const currentStart = toDate(params.currentStart, latestCurrentBatch?.periodStart || defaultCurrentStart);
+  const currentEnd = toDate(params.currentEnd, latestCurrentBatch?.periodEnd || defaultCurrentEnd);
+  const previousStart = toDate(params.previousStart, latestPreviousBatch?.periodStart || defaultPreviousStart);
+  const previousEnd = toDate(params.previousEnd, latestPreviousBatch?.periodEnd || defaultPreviousEnd);
+
+  const [currentShopRows, previousShopRows, products, previousProducts, promotionPlans, trafficSources, userProfiles, currentPromotion, previousPromotion] = await Promise.all([
     prisma.shopMetric.findMany({ where: { shopId: shop.id, date: { gte: currentStart, lte: currentEnd } }, orderBy: { date: "asc" } }),
     prisma.shopMetric.findMany({ where: { shopId: shop.id, date: { gte: previousStart, lte: previousEnd } }, orderBy: { date: "asc" } }),
     prisma.productMetric.findMany({ where: { shopId: shop.id, date: { gte: currentStart, lte: currentEnd } } }),
+    prisma.productMetric.findMany({ where: { shopId: shop.id, date: { gte: previousStart, lte: previousEnd } } }),
     prisma.promotionPlanMetric.findMany({ where: { shopId: shop.id, date: { gte: currentStart, lte: currentEnd } } }),
     prisma.trafficSourceMetric.findMany({ where: { shopId: shop.id, date: { gte: currentStart, lte: currentEnd } } }),
     prisma.userProfileMetric.findMany({ where: { shopId: shop.id, date: { gte: currentStart, lte: currentEnd } } }),
@@ -99,8 +115,10 @@ export async function buildReportFromDb(params: {
     promotionSummary(shop.id, previousStart, previousEnd)
   ]);
 
-  const current = currentShopRows.length ? summarizeShopMetrics(currentShopRows) : emptyMetric();
-  const previous = previousShopRows.length ? summarizeShopMetrics(previousShopRows) : emptyMetric();
+  const currentFilledFromProducts = !currentShopRows.length && products.length > 0;
+  const previousFilledFromProducts = !previousShopRows.length && previousProducts.length > 0;
+  const current = currentShopRows.length ? summarizeShopMetrics(currentShopRows) : currentFilledFromProducts ? summarizeProductMetrics(products) : emptyMetric();
+  const previous = previousShopRows.length ? summarizeShopMetrics(previousShopRows) : previousFilledFromProducts ? summarizeProductMetrics(previousProducts) : emptyMetric();
   current.spend = currentPromotion.spend;
   current.roi = currentPromotion.roi;
   previous.spend = previousPromotion.spend;
@@ -170,6 +188,10 @@ export async function buildReportFromDb(params: {
       previous: { start: isoDate(previousStart), end: isoDate(previousEnd) }
     }
   });
+
+  if (currentFilledFromProducts || previousFilledFromProducts) {
+    report.executiveSummary.topReasons.push("店铺大盘缺失时，部分核心指标由商品明细汇总补齐");
+  }
 
   if (params.persist) {
     const saved = await prisma.analysisReport.create({

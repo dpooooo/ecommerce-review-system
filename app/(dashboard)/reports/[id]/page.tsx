@@ -2,18 +2,46 @@ import { AnomalyList } from "@/components/dashboard/AnomalyList";
 import { ActionList } from "@/components/dashboard/ActionList";
 import { Card } from "@/components/common/Card";
 import { ReportActions } from "@/components/reports/ReportActions";
+import { ReportModule } from "@/components/reports/ReportModule";
 import { buildReportSchema } from "@/lib/analysis/report/reportBuilder";
 import type { ReportSchema } from "@/lib/analysis/types";
 import { getSessionUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
+import { formatMoney, formatNumber, formatPercent } from "@/lib/format";
+
+const moneyMetricKeys = new Set(["gmv", "gsv", "aov", "refundAmount", "spend"]);
+const percentMetricKeys = new Set(["conversionRate", "refundRate"]);
+
+function metricValue(key: string, value: number) {
+  if (percentMetricKeys.has(key)) return formatPercent(value);
+  if (moneyMetricKeys.has(key)) return formatMoney(value);
+  if (key === "roi") return value.toFixed(2);
+  return formatNumber(value);
+}
 
 async function loadReport(id: string): Promise<ReportSchema> {
   const user = await getSessionUser();
   if (!user) return buildReportSchema({ reportId: id });
   const report = await prisma.analysisReport.findFirst({
-    where: { id, userId: user.id }
+    where: { id, userId: user.id },
+    include: { actionItems: true }
   });
-  return (report?.reportJson as ReportSchema | undefined) || buildReportSchema({ reportId: id });
+  const schema = (report?.reportJson as ReportSchema | undefined) || buildReportSchema({ reportId: id });
+  if (report?.actionItems.length) {
+    schema.actionItems = report.actionItems.map((item) => ({
+      id: item.id,
+      priority: item.priority,
+      title: item.title,
+      action: item.action,
+      targetMetric: item.targetMetric,
+      estimatedImpact: item.estimatedImpact,
+      owner: item.owner,
+      dueDate: item.dueDate?.toISOString(),
+      status: item.status,
+      sourceEvidence: item.sourceEvidence
+    }));
+  }
+  return schema;
 }
 
 export default async function ReportDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -41,22 +69,14 @@ export default async function ReportDetailPage({ params }: { params: Promise<{ i
           {report.metrics.map((metric) => (
             <div key={metric.key} className="rounded-md bg-slate-50 p-3">
               <div className="text-sm text-slate-500">{metric.name}</div>
-              <div className="mt-1 font-semibold text-slate-950">{metric.displayChange}</div>
+              <div className="mt-1 text-lg font-semibold text-slate-950">{metricValue(metric.key, metric.current)}</div>
+              <div className="mt-1 text-xs text-slate-500">同期 {metricValue(metric.key, metric.previous)}</div>
+              <div className={metric.trend === "down" ? "mt-2 text-xs font-medium text-red-600" : "mt-2 text-xs font-medium text-emerald-600"}>{metric.displayChange}</div>
             </div>
           ))}
         </div>
       </Card>
-      {report.modules.map((module, index) => (
-        <Card key={module.key} className="p-5">
-          <h2 className="font-semibold">{index + 3}. {module.title}</h2>
-          <p className="mt-2 text-sm text-slate-600">{module.summary}</p>
-          {module.actions?.length ? (
-            <div className="mt-4 flex flex-wrap gap-2">
-              {module.actions.map((action) => <span key={action} className="rounded bg-slate-100 px-2 py-1 text-xs text-slate-600">{action}</span>)}
-            </div>
-          ) : null}
-        </Card>
-      ))}
+      {report.modules.map((module, index) => <ReportModule key={module.key} module={module} index={index + 3} />)}
       <Card className="p-5"><h2 className="mb-4 font-semibold">9. 异常中心</h2><AnomalyList items={report.anomalies} /></Card>
       <Card className="p-5"><h2 className="mb-4 font-semibold">10. 行动清单</h2><ActionList items={report.actionItems} /></Card>
       <Card className="p-5">

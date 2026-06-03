@@ -26,6 +26,7 @@ type UploadResult = {
   file: {
     id: string;
     originalName: string;
+    reportType: string;
     rowCount: number;
     columnCount: number;
     parseStatus: string;
@@ -34,9 +35,16 @@ type UploadResult = {
   rawColumns: string[];
   preview: Array<Record<string, unknown>>;
   mapping: MappingItem[];
+  detectedReportType?: string;
+  detection?: {
+    reportType: string;
+    confidence: number;
+    matchedFields: number;
+  };
 };
 
 const reportTypes = [
+  { value: "auto", label: "自动识别" },
   { value: "shop", label: "店铺数据" },
   { value: "product", label: "商品数据" },
   { value: "promotion", label: "推广数据" },
@@ -72,7 +80,7 @@ export function UploadWorkflow() {
   const [shops, setShops] = useState<Shop[]>([]);
   const [shopId, setShopId] = useState("");
   const [platform, setPlatform] = useState("TMALL");
-  const [reportType, setReportType] = useState("shop");
+  const [reportType, setReportType] = useState("auto");
   const [periodType, setPeriodType] = useState("current");
   const [periodStart, setPeriodStart] = useState(today(-30));
   const [periodEnd, setPeriodEnd] = useState(today());
@@ -82,7 +90,8 @@ export function UploadWorkflow() {
   const [status, setStatus] = useState<"idle" | "uploading" | "uploaded" | "importing" | "imported" | "error">("idle");
   const [message, setMessage] = useState("");
 
-  const standardFields = useMemo(() => standardFieldsByType[reportType] || [], [reportType]);
+  const activeReportType = reportType === "auto" ? uploadResult?.detectedReportType || uploadResult?.file.reportType || "shop" : reportType;
+  const standardFields = useMemo(() => standardFieldsByType[activeReportType] || [], [activeReportType]);
 
   useEffect(() => {
     fetch("/api/shops")
@@ -134,8 +143,9 @@ export function UploadWorkflow() {
     }
     setUploadResult(data);
     setMapping(data.mapping || []);
+    if (data.detectedReportType) setReportType(data.detectedReportType);
     setStatus("uploaded");
-    setMessage("文件解析完成，请确认字段映射后入库。");
+    setMessage(`文件解析完成，系统识别为「${reportTypes.find((item) => item.value === data.detectedReportType)?.label || data.detectedReportType}」，请确认字段映射后入库。`);
   }
 
   async function confirmImport() {
@@ -154,7 +164,7 @@ export function UploadWorkflow() {
       return;
     }
     setStatus("imported");
-    setMessage(`入库完成：${data.target} 写入 ${data.importedRows} 行。`);
+    setMessage(`入库完成：${data.target} 写入 ${data.importedRows} 行，保存 ${data.savedMappings || 0} 个字段映射。`);
   }
 
   function updateMapping(originalField: string, standardField: string) {
@@ -248,8 +258,13 @@ export function UploadWorkflow() {
               <div>
                 <h2 className="font-semibold text-slate-950">字段预览与映射确认</h2>
                 <p className="mt-1 text-sm text-slate-500">
-                  {uploadResult.file.originalName} · {uploadResult.file.rowCount} 行 · {uploadResult.file.columnCount} 列
+                  {uploadResult.file.originalName} · {uploadResult.file.rowCount} 行 · {uploadResult.file.columnCount} 列 · {reportTypes.find((item) => item.value === uploadResult.file.reportType)?.label || uploadResult.file.reportType} · 已识别 {mapping.filter((item) => item.standardField).length} 个字段
                 </p>
+                {uploadResult.detection ? (
+                  <p className="mt-1 text-xs text-slate-400">
+                    报表识别匹配 {uploadResult.detection.matchedFields} 个特征字段，置信度 {(uploadResult.detection.confidence * 100).toFixed(0)}%
+                  </p>
+                ) : null}
               </div>
               <button
                 onClick={confirmImport}

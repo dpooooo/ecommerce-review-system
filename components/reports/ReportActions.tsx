@@ -20,7 +20,7 @@ export function ReportActions({ report }: { report: ReportSchema }) {
     window.setTimeout(() => setCopied(false), 1600);
   }
 
-  async function exportPdfHtml() {
+  async function exportReportHtml() {
     const response = await fetch(`/api/reports/${report.reportId}/export-pdf`, { method: "POST" });
     const blob = await response.blob();
     const url = URL.createObjectURL(blob);
@@ -36,8 +36,8 @@ export function ReportActions({ report }: { report: ReportSchema }) {
       <button onClick={copySummary} className="h-10 rounded-md border border-slate-200 px-4 text-sm">
         {copied ? "已复制" : "复制摘要"}
       </button>
-      <button className="h-10 rounded-md border border-slate-200 px-4 text-sm">导出图片</button>
-      <button onClick={exportPdfHtml} className="h-10 rounded-md bg-brand-600 px-4 text-sm font-medium text-white">导出 PDF</button>
+      <a href={`/api/reports/${report.reportId}/export-json`} className="inline-flex h-10 items-center rounded-md border border-slate-200 px-4 text-sm">导出 JSON</a>
+      <button onClick={exportReportHtml} className="h-10 rounded-md bg-brand-600 px-4 text-sm font-medium text-white">导出 HTML</button>
     </div>
   );
 }

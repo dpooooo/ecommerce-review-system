@@ -36,6 +36,22 @@ async function main() {
     )
   );
 
+  await prisma.fieldMapping.createMany({
+    data: [
+      { platform: "TMALL", reportType: "shop", originalField: "访客数", standardField: "traffic" },
+      { platform: "TMALL", reportType: "shop", originalField: "GMV", standardField: "gmv" },
+      { platform: "TMALL", reportType: "shop", originalField: "GSV", standardField: "gsv" },
+      { platform: "TMALL", reportType: "shop", originalField: "订单数", standardField: "orders" },
+      { platform: "TMALL", reportType: "shop", originalField: "退款金额", standardField: "refundAmount" },
+      { platform: "TMALL", reportType: "product", originalField: "商品ID", standardField: "productId" },
+      { platform: "TMALL", reportType: "product", originalField: "商品名称", standardField: "productName" },
+      { platform: "TMALL", reportType: "promotion", originalField: "推广花费", standardField: "spend" },
+      { platform: "TMALL", reportType: "promotion", originalField: "推广成交", standardField: "promoGmv" },
+      { platform: "TMALL", reportType: "promotion", originalField: "ROI", standardField: "roi" }
+    ],
+    skipDuplicates: true
+  });
+
   const shop = shops[0];
   const currentBatch = await prisma.uploadBatch.create({
     data: {

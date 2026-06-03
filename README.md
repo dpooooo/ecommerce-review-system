@@ -53,6 +53,7 @@ npm run dev
 ```bash
 npm run dev
 npm run build
+npm run typecheck
 npm run start
 npm run prisma:generate
 npm run prisma:migrate
@@ -110,4 +111,17 @@ pm2 restart ecommerce-review-system
 - `sample-data/product-current.csv`
 - `sample-data/promotion-current.csv`
 
-推荐验证顺序：先上传本期店铺数据，再上传同期店铺数据，随后上传商品和推广数据，最后到报告中心生成复盘报告。
+推荐验证顺序：先上传本期店铺数据，再上传同期店铺数据，随后上传商品和推广数据，最后到报告中心生成复盘报告。上传页支持按表头自动识别报表类型，也可以手动指定。
+
+报告导出当前提供 HTML 和 ReportSchema JSON。HTML 可用浏览器打印为 PDF；服务端原生 PDF 渲染可在后续接入 Playwright。
+
+## MVP 验证流程
+
+1. 使用 `admin@example.com / 123456` 登录。
+2. 在系统设置中确认或新增店铺。
+3. 到数据上传页上传 `sample-data/shop-current.csv`，上传模式选择“本期数据”，确认字段映射后入库。
+4. 上传 `sample-data/shop-previous.csv`，上传模式选择“同期数据”，确认入库。
+5. 上传 `sample-data/product-current.csv` 和 `sample-data/promotion-current.csv`。
+6. 到报告中心生成复盘报告。
+7. 在报告详情页查看归因、商品四象限、异常中心和行动清单，并可导出 HTML / JSON。
+8. 在数据管理页查看上传批次详情，必要时重新清洗或删除错误批次。

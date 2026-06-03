@@ -25,6 +25,33 @@ async function createShop(formData: FormData) {
   revalidatePath("/reports");
 }
 
+async function saveFieldMapping(formData: FormData) {
+  "use server";
+
+  const platform = String(formData.get("platform") || "TMALL");
+  const reportType = String(formData.get("reportType") || "shop");
+  const originalField = String(formData.get("originalField") || "").trim();
+  const standardField = String(formData.get("standardField") || "").trim();
+  if (!originalField || !standardField) return;
+  await prisma.fieldMapping.upsert({
+    where: {
+      platform_reportType_originalField: {
+        platform,
+        reportType,
+        originalField
+      }
+    },
+    create: {
+      platform,
+      reportType,
+      originalField,
+      standardField
+    },
+    update: { standardField }
+  });
+  revalidatePath("/settings");
+}
+
 export default async function SettingsPage() {
   const user = await getSessionUser();
   const [shops, mappings] = user
@@ -88,8 +115,29 @@ export default async function SettingsPage() {
       </div>
 
       <div className="grid grid-cols-3 gap-6">
-        <Card className="p-5">
+        <Card className="col-span-2 p-5">
           <h2 className="font-semibold text-slate-950">字段映射配置</h2>
+          <form action={saveFieldMapping} className="mt-4 grid grid-cols-5 gap-3">
+            <select name="platform" className="h-10 rounded-md border border-slate-200 px-3 text-sm">
+              <option value="TMALL">TMALL</option>
+              <option value="JD">JD</option>
+              <option value="DOUYIN">DOUYIN</option>
+              <option value="PDD">PDD</option>
+              <option value="OTHER">OTHER</option>
+            </select>
+            <select name="reportType" className="h-10 rounded-md border border-slate-200 px-3 text-sm">
+              <option value="shop">店铺数据</option>
+              <option value="product">商品数据</option>
+              <option value="promotion">推广数据</option>
+              <option value="traffic_source">流量来源</option>
+              <option value="user_profile">用户画像</option>
+              <option value="promotion_plan">推广计划</option>
+              <option value="promotion_audience">推广人群</option>
+            </select>
+            <input name="originalField" required placeholder="原始字段" className="h-10 rounded-md border border-slate-200 px-3 text-sm" />
+            <input name="standardField" required placeholder="标准字段" className="h-10 rounded-md border border-slate-200 px-3 text-sm" />
+            <button className="h-10 rounded-md bg-brand-600 text-sm font-medium text-white">保存映射</button>
+          </form>
           <div className="mt-4 space-y-2">
             {mappings.length ? mappings.slice(0, 6).map((mapping) => (
               <div key={mapping.id} className="rounded-md bg-slate-50 p-3 text-sm">

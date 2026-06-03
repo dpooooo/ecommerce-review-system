@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { Card } from "@/components/common/Card";
+import { ConfirmSubmitButton } from "@/components/common/ConfirmSubmitButton";
 import { getSessionUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 
@@ -50,10 +51,10 @@ export default async function HistoryPage() {
                 </div>
                 <div className="flex gap-2">
                   <Link href={`/reports/${report.id}`} className="rounded-md border border-slate-200 px-3 py-2 text-sm">查看</Link>
-                  <button className="rounded-md border border-slate-200 px-3 py-2 text-sm">下载</button>
+                  <a href={`/api/reports/${report.id}/export-pdf`} className="rounded-md border border-slate-200 px-3 py-2 text-sm">下载</a>
                   <form action={deleteReport}>
                     <input type="hidden" name="reportId" value={report.id} />
-                    <button className="rounded-md border border-red-200 px-3 py-2 text-sm text-red-600">删除</button>
+                    <ConfirmSubmitButton message="确认删除这份历史报告？" className="rounded-md border border-red-200 px-3 py-2 text-sm text-red-600">删除</ConfirmSubmitButton>
                   </form>
                 </div>
               </div>

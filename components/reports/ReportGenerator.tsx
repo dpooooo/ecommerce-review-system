@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FileText, Loader2 } from "lucide-react";
 import { Card } from "@/components/common/Card";
@@ -13,19 +14,32 @@ type Shop = {
 
 const modules = ["店铺大盘", "GMV 归因", "GSV 归因", "商品分析", "推广分析", "流量分析", "用户分析", "异常中心", "行动清单"];
 
-function dateValue(offsetDays: number) {
-  const date = new Date();
-  date.setDate(date.getDate() + offsetDays);
-  return date.toISOString().slice(0, 10);
-}
-
-export function ReportGenerator({ shops }: { shops: Shop[] }) {
+export function ReportGenerator({
+  shops,
+  defaultPeriod,
+  recentReports
+}: {
+  shops: Shop[];
+  defaultPeriod?: {
+    currentStart?: string;
+    currentEnd?: string;
+    previousStart?: string;
+    previousEnd?: string;
+  };
+  recentReports?: Array<{
+    id: string;
+    title: string;
+    shopName: string;
+    period: string;
+    createdAt: string;
+  }>;
+}) {
   const router = useRouter();
   const [shopId, setShopId] = useState(shops[0]?.id || "");
-  const [currentStart, setCurrentStart] = useState(dateValue(-30));
-  const [currentEnd, setCurrentEnd] = useState(dateValue(0));
-  const [previousStart, setPreviousStart] = useState(dateValue(-61));
-  const [previousEnd, setPreviousEnd] = useState(dateValue(-31));
+  const [currentStart, setCurrentStart] = useState(defaultPeriod?.currentStart || "2024-05-01");
+  const [currentEnd, setCurrentEnd] = useState(defaultPeriod?.currentEnd || "2024-05-31");
+  const [previousStart, setPreviousStart] = useState(defaultPeriod?.previousStart || "2024-04-01");
+  const [previousEnd, setPreviousEnd] = useState(defaultPeriod?.previousEnd || "2024-04-30");
   const [status, setStatus] = useState<"idle" | "generating" | "error">("idle");
   const [message, setMessage] = useState("");
 
@@ -95,6 +109,20 @@ export function ReportGenerator({ shops }: { shops: Shop[] }) {
             生成复盘报告
           </button>
         </form>
+      </Card>
+      <Card className="p-5">
+        <h2 className="font-semibold text-slate-950">最近报告</h2>
+        <div className="mt-4 space-y-3">
+          {recentReports?.length ? recentReports.map((report) => (
+            <div key={report.id} className="flex items-center justify-between rounded-md border border-slate-200 p-3">
+              <div>
+                <div className="text-sm font-medium text-slate-900">{report.title}</div>
+                <div className="mt-1 text-xs text-slate-500">{report.shopName} · {report.period}</div>
+              </div>
+              <Link href={`/reports/${report.id}`} className="rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-700">查看</Link>
+            </div>
+          )) : <p className="text-sm text-slate-500">暂无历史报告，生成后会出现在这里。</p>}
+        </div>
       </Card>
     </div>
   );

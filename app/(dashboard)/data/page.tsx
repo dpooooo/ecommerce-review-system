@@ -1,8 +1,10 @@
 import { Card } from "@/components/common/Card";
+import { ConfirmSubmitButton } from "@/components/common/ConfirmSubmitButton";
 import { prisma } from "@/lib/db/prisma";
 import { getSessionUser } from "@/lib/auth/session";
 import { revalidatePath } from "next/cache";
 import { importUploadedFile } from "@/lib/upload/importer";
+import Link from "next/link";
 
 async function deleteBatch(formData: FormData) {
   "use server";
@@ -116,9 +118,10 @@ export default async function DataPage() {
                             <input type="hidden" name="batchId" value={row.id} />
                             <button className="rounded-md border border-slate-200 px-3 py-1.5 text-xs text-slate-700">重新清洗</button>
                           </form>
+                          <Link href={`/data/${row.id}`} className="rounded-md border border-slate-200 px-3 py-1.5 text-xs text-slate-700">详情</Link>
                           <form action={deleteBatch}>
                             <input type="hidden" name="batchId" value={row.id} />
-                            <button className="rounded-md border border-red-200 px-3 py-1.5 text-xs text-red-600">删除</button>
+                            <ConfirmSubmitButton message="确认删除这个上传批次及其入库数据？" className="rounded-md border border-red-200 px-3 py-1.5 text-xs text-red-600">删除</ConfirmSubmitButton>
                           </form>
                         </>
                       ) : <span className="text-xs text-slate-400">演示数据</span>}
