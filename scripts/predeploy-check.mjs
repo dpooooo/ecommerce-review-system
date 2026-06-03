@@ -17,6 +17,13 @@ if (missing.length) {
   process.exit(1);
 }
 
+const validNodeEnvs = new Set(["production", "development", "test"]);
+if (!validNodeEnvs.has(process.env.NODE_ENV || "")) {
+  console.error(`NODE_ENV 必须是 production、development 或 test，当前值是：${process.env.NODE_ENV}`);
+  console.error("宝塔生产部署请设置 NODE_ENV=production。非标准 NODE_ENV 会导致 Next.js 构建和运行异常。");
+  process.exit(1);
+}
+
 if (!process.env.DATABASE_URL?.startsWith("postgresql://") && !process.env.DATABASE_URL?.startsWith("postgres://")) {
   console.error("DATABASE_URL 必须是 PostgreSQL 连接字符串。");
   process.exit(1);
@@ -24,6 +31,13 @@ if (!process.env.DATABASE_URL?.startsWith("postgresql://") && !process.env.DATAB
 
 if ((process.env.JWT_SECRET || "").length < 16) {
   console.error("JWT_SECRET 至少建议 16 位以上。");
+  process.exit(1);
+}
+
+try {
+  new URL(process.env.NEXT_PUBLIC_APP_URL || "");
+} catch {
+  console.error("NEXT_PUBLIC_APP_URL 必须是合法 URL，例如 https://your-domain.com。");
   process.exit(1);
 }
 
