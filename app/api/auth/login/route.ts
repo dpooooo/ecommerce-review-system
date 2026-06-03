@@ -17,5 +17,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "账号或密码错误" }, { status: 401 });
   }
   await createSession(user.id);
-  return NextResponse.redirect(new URL("/dashboard", request.url));
+  const next = String(form.get("next") || "/dashboard");
+  return NextResponse.redirect(new URL(next.startsWith("/") ? next : "/dashboard", request.url));
 }

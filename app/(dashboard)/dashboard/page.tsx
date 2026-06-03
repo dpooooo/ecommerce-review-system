@@ -6,9 +6,12 @@ import { AnomalyList } from "@/components/dashboard/AnomalyList";
 import { ActionList } from "@/components/dashboard/ActionList";
 import { Card } from "@/components/common/Card";
 import { buildReportSchema } from "@/lib/analysis/report/reportBuilder";
+import { getSessionUser } from "@/lib/auth/session";
+import { buildReportFromDb } from "@/lib/analysis/report/dbReportBuilder";
 
-export default function DashboardPage() {
-  const report = buildReportSchema();
+export default async function DashboardPage() {
+  const user = await getSessionUser();
+  const report = user ? await buildReportFromDb({ userId: user.id }) : buildReportSchema();
   const trend = report.modules.find((item) => item.key === "trend")?.charts?.[0].data as Array<{ date: string; gmv: number; gsv: number }>;
   const gmv = report.modules.find((item) => item.key === "gmv_attribution")?.tables?.[0].data as Array<{ name: string; contribution: number; impactShare?: number; direction?: string }>;
   const product = report.modules.find((item) => item.key === "product_analysis")?.tables?.[0] as { topProducts: Array<Record<string, unknown>>; quadrants: Array<Record<string, unknown>> };

@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { BarChart3 } from "lucide-react";
 
-export default function LoginPage() {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
+  const { next } = await searchParams;
   return (
     <main className="data-grid-bg flex min-h-screen items-center justify-center bg-[#f5f8fc] p-6">
       <div className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-8 shadow-card">
@@ -13,6 +14,7 @@ export default function LoginPage() {
           <p className="mt-2 text-sm text-slate-500">上传数据，自动诊断经营问题，生成复盘报告</p>
         </div>
         <form action="/api/auth/login" method="post" className="space-y-4">
+          <input type="hidden" name="next" value={next || "/dashboard"} />
           <label className="block">
             <span className="text-sm font-medium text-slate-700">账号 / 邮箱</span>
             <input name="email" type="email" required className="mt-1 h-11 w-full rounded-md border border-slate-200 px-3 outline-none focus:border-brand-500" />

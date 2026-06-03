@@ -16,15 +16,40 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!batch) return NextResponse.json({ error: "上传批次不存在" }, { status: 404 });
   const file = batch.files[0];
   if (!file) return NextResponse.json({ error: "上传批次没有文件" }, { status: 400 });
+  const mapping = Array.isArray(body.mapping)
+    ? body.mapping.filter((item: { originalField?: string; standardField?: string }) => item.originalField && item.standardField)
+    : [];
 
   const result = await importUploadedFile({
     prisma,
     batch,
     file,
-    mapping: body.mapping
+    mapping
   });
+  if (mapping.length) {
+    await Promise.all(
+      mapping.map((item: { originalField: string; standardField: string }) =>
+        prisma.fieldMapping.upsert({
+          where: {
+            platform_reportType_originalField: {
+              platform: batch.platform,
+              reportType: file.reportType,
+              originalField: item.originalField
+            }
+          },
+          create: {
+            platform: batch.platform,
+            reportType: file.reportType,
+            originalField: item.originalField,
+            standardField: item.standardField
+          },
+          update: { standardField: item.standardField }
+        })
+      )
+    );
+  }
   await prisma.uploadedFile.update({ where: { id: file.id }, data: { parseStatus: "imported" } });
   await prisma.uploadBatch.update({ where: { id: batch.id }, data: { status: "imported" } });
 
-  return NextResponse.json({ status: "imported", ...result });
+  return NextResponse.json({ status: "imported", savedMappings: mapping.length, ...result });
 }

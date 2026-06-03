@@ -99,4 +99,15 @@ pm2 restart ecommerce-review-system
 
 ## MVP 状态
 
-当前版本已经包含可运行的工程骨架、核心页面、demo ReportSchema、主要 API、Prisma 数据模型和 seed。上传接口支持保存文件并解析 Excel / CSV 预览。后续可继续把确认入库接口从预留逻辑扩展为完整标准化写库流程。
+当前版本已经包含可运行的工程骨架、核心页面、demo ReportSchema、主要 API、Prisma 数据模型和 seed。上传接口支持保存文件、解析 Excel / CSV、字段映射、确认入库，并可从数据库聚合生成复盘报告。
+
+## 示例上传文件
+
+`sample-data` 目录提供了几份可直接上传的 CSV：
+
+- `sample-data/shop-current.csv`
+- `sample-data/shop-previous.csv`
+- `sample-data/product-current.csv`
+- `sample-data/promotion-current.csv`
+
+推荐验证顺序：先上传本期店铺数据，再上传同期店铺数据，随后上传商品和推广数据，最后到报告中心生成复盘报告。
