@@ -1,5 +1,16 @@
 import { NextResponse } from "next/server";
+import { getSessionUser } from "@/lib/auth/session";
+import { prisma } from "@/lib/db/prisma";
 
-export async function POST() {
+export async function POST(_: Request, { params }: { params: Promise<{ id: string }> }) {
+  const user = await getSessionUser();
+  if (!user) return NextResponse.json({ error: "未登录" }, { status: 401 });
+  const { id } = await params;
+  const shops = await prisma.shop.findMany({ where: { userId: user.id }, select: { id: true } });
+  const result = await prisma.actionItem.updateMany({
+    where: { id, shopId: { in: shops.map((shop) => shop.id) } },
+    data: { status: "已完成" }
+  });
+  if (result.count === 0) return NextResponse.json({ error: "行动项不存在" }, { status: 404 });
   return NextResponse.json({ ok: true, status: "已完成" });
 }

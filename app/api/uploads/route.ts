@@ -1,19 +1,29 @@
 import { mkdir, writeFile } from "fs/promises";
 import path from "path";
+import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { uploadDir } from "@/lib/env";
 import { parseBuffer } from "@/lib/upload/parser";
 import { guessFieldMapping } from "@/lib/analysis/standardize/fieldMapping";
+import { getSessionUser } from "@/lib/auth/session";
+import { prisma } from "@/lib/db/prisma";
 
 export async function GET() {
-  return NextResponse.json({
-    uploads: [
-      { id: "demo-upload-1", reportType: "shop", originalName: "shop-demo.csv", status: "imported", rowCount: 31 }
-    ]
+  const user = await getSessionUser();
+  if (!user) return NextResponse.json({ error: "未登录" }, { status: 401 });
+  const uploads = await prisma.uploadBatch.findMany({
+    where: { userId: user.id },
+    include: { shop: true, files: true },
+    orderBy: { createdAt: "desc" },
+    take: 50
   });
+  return NextResponse.json({ uploads });
 }
 
 export async function POST(request: Request) {
+  const user = await getSessionUser();
+  if (!user) return NextResponse.json({ error: "未登录" }, { status: 401 });
+
   const form = await request.formData();
   const file = form.get("file");
   if (!(file instanceof File)) {
@@ -28,13 +38,57 @@ export async function POST(request: Request) {
   await writeFile(storedPath, bytes);
 
   const parsed = parseBuffer(bytes, file.name);
+  const requestedShopId = String(form.get("shopId") || "");
+  const platform = String(form.get("platform") || "TMALL");
+  const reportType = String(form.get("reportType") || "shop");
+  const periodType = String(form.get("periodType") || "current");
+  const periodStart = new Date(String(form.get("periodStart") || "2024-05-01"));
+  const periodEnd = new Date(String(form.get("periodEnd") || "2024-05-31"));
+  const shop =
+    (requestedShopId && (await prisma.shop.findFirst({ where: { id: requestedShopId, userId: user.id } }))) ||
+    (await prisma.shop.findFirst({ where: { userId: user.id }, orderBy: { createdAt: "asc" } })) ||
+    (await prisma.shop.create({
+      data: {
+        userId: user.id,
+        name: "默认店铺",
+        platform,
+        shopCode: "default-shop"
+      }
+    }));
+
+  const batch = await prisma.uploadBatch.create({
+    data: {
+      userId: user.id,
+      shopId: shop.id,
+      platform,
+      periodType,
+      periodStart,
+      periodEnd,
+      status: parsed.error ? "failed" : "parsed"
+    }
+  });
+  const uploadedFile = await prisma.uploadedFile.create({
+    data: {
+      batchId: batch.id,
+      shopId: shop.id,
+      reportType,
+      originalName: file.name,
+      storedPath,
+      fileType: file.name.split(".").pop()?.toLowerCase() || file.type || "unknown",
+      fileSize: file.size,
+      rowCount: parsed.rowCount,
+      columnCount: parsed.columnCount,
+      parseStatus: parsed.error ? "failed" : "parsed",
+      parseError: parsed.error,
+      rawColumns: parsed.rawColumns as Prisma.InputJsonValue,
+      rawPreview: parsed.rawData.slice(0, 20) as Prisma.InputJsonValue
+    }
+  });
+
   return NextResponse.json({
-    batch: {
-      id: crypto.randomUUID(),
-      status: parsed.error ? "failed" : "parsed",
-      reportType: String(form.get("reportType") || "shop")
-    },
+    batch,
     file: {
+      id: uploadedFile.id,
       originalName: file.name,
       storedPath,
       fileType: file.type,
