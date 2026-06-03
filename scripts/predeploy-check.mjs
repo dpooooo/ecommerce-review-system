@@ -5,6 +5,15 @@ import process from "node:process";
 import { setTimeout as sleep } from "node:timers/promises";
 import nextEnv from "@next/env";
 
+const inheritedNodeEnv = process.env.NODE_ENV;
+const validNodeEnvs = new Set(["production", "development", "test"]);
+
+if (inheritedNodeEnv && !validNodeEnvs.has(inheritedNodeEnv)) {
+  console.error(`当前 shell 中的 NODE_ENV 非标准：${inheritedNodeEnv}`);
+  console.error("请在宝塔环境变量、PM2 环境变量或当前 shell 中设置 NODE_ENV=production。");
+  process.exit(1);
+}
+
 const { loadEnvConfig } = nextEnv;
 loadEnvConfig(process.cwd(), process.env.NODE_ENV !== "production");
 
@@ -17,7 +26,6 @@ if (missing.length) {
   process.exit(1);
 }
 
-const validNodeEnvs = new Set(["production", "development", "test"]);
 if (!validNodeEnvs.has(process.env.NODE_ENV || "")) {
   console.error(`NODE_ENV 必须是 production、development 或 test，当前值是：${process.env.NODE_ENV}`);
   console.error("宝塔生产部署请设置 NODE_ENV=production。非标准 NODE_ENV 会导致 Next.js 构建和运行异常。");
