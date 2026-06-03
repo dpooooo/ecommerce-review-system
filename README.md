@@ -46,7 +46,7 @@ npm run seed
 npm run dev
 ```
 
-访问 `http://localhost:3000`。
+访问 `http://localhost:3001`。
 
 ## 常用脚本
 
@@ -54,6 +54,7 @@ npm run dev
 npm run dev
 npm run build
 npm run typecheck
+npm run predeploy:check
 npm run start
 npm run prisma:generate
 npm run prisma:migrate
@@ -125,3 +126,28 @@ pm2 restart ecommerce-review-system
 6. 到报告中心生成复盘报告。
 7. 在报告详情页查看归因、商品四象限、异常中心和行动清单，并可导出 HTML / JSON。
 8. 在数据管理页查看上传批次详情，必要时重新清洗或删除错误批次。
+
+## 部署前检查
+
+部署前建议执行：
+
+```bash
+npm run typecheck
+npm run predeploy:check
+npm run build
+```
+
+启动后访问：
+
+```text
+/api/health
+```
+
+健康检查会验证数据库连接，并返回上传目录路径。
+
+PM2 部署可使用根目录的 `ecosystem.config.js`：
+
+```bash
+pm2 start ecosystem.config.js
+pm2 save
+```

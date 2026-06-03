@@ -88,6 +88,9 @@ NEXT_PUBLIC_APP_URL="https://你的域名"
 UPLOAD_DIR="/www/wwwroot/ecommerce-review-system/uploads"
 ```
 
+如果使用宝塔 Node 项目管理器，请在项目环境变量面板中填写同样的变量。  
+如果使用 PM2，建议在服务器 shell 中确认变量可被进程读取，或在宝塔 PM2 管理器中配置环境变量。
+
 ## 6. 初始化数据库
 
 ```bash
@@ -104,6 +107,12 @@ npm run seed
 - password: `123456`
 
 ## 7. 构建项目
+
+构建前先执行部署前检查：
+
+```bash
+npm run predeploy:check
+```
 
 ```bash
 npm run build
@@ -122,21 +131,36 @@ npm run start
 PM2 启动：
 
 ```bash
-pm2 start npm --name ecommerce-review-system -- start
+pm2 start ecosystem.config.js
 pm2 save
 ```
 
-默认端口为 `3000`。
+默认端口为 `3001`。
+
+如果不使用 `ecosystem.config.js`，也可以使用：
+
+```bash
+pm2 start npm --name ecommerce-review-system -- start
+pm2 save
+```
 
 ## 9. 宝塔反向代理
 
 在宝塔网站中绑定域名，然后配置反向代理：
 
 ```text
-目标 URL：http://127.0.0.1:3000
+目标 URL：http://127.0.0.1:3001
 ```
 
 开启 SSL 证书，并建议开启强制 HTTPS。
+
+启动后检查：
+
+```bash
+curl http://127.0.0.1:3001/api/health
+```
+
+返回 `ok: true` 说明 Node 服务和 PostgreSQL 连接正常。
 
 ## 10. 上传目录权限
 
@@ -160,11 +184,11 @@ chmod -R 755 /www/wwwroot/ecommerce-review-system/uploads
 
 Prisma 连接 PostgreSQL 失败：检查 `DATABASE_URL`、数据库用户密码、端口和 PostgreSQL 服务状态。
 
-端口 3000 被占用：使用 `lsof -i:3000` 找到进程，或调整启动端口。
+端口 3001 被占用：使用 `lsof -i:3001` 找到进程，或调整启动端口。
 
 上传文件失败：检查 `UPLOAD_DIR` 是否存在，Node 进程是否有写入权限。
 
-反向代理 502：确认 `npm run start` 或 PM2 进程正在运行，端口是 3000。
+反向代理 502：确认 `npm run start` 或 PM2 进程正在运行，端口是 3001。
 
 页面可以访问但 API 报错：检查 `.env.production` 是否配置完整，尤其是 `JWT_SECRET` 和 `DATABASE_URL`。
 
