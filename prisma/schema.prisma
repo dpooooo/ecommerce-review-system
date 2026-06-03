@@ -1,0 +1,294 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String   @default("admin")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  shops         Shop[]
+  uploadBatches UploadBatch[]
+  reports       AnalysisReport[]
+}
+
+model Shop {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  platform  String
+  shopCode  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user                    User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  uploadBatches           UploadBatch[]
+  uploadedFiles           UploadedFile[]
+  shopMetrics             ShopMetric[]
+  promotionMetrics        PromotionMetric[]
+  productMetrics          ProductMetric[]
+  trafficSourceMetrics    TrafficSourceMetric[]
+  userProfileMetrics      UserProfileMetric[]
+  promotionPlanMetrics    PromotionPlanMetric[]
+  promotionAudienceMetrics PromotionAudienceMetric[]
+  reports                 AnalysisReport[]
+  actionItems             ActionItem[]
+}
+
+model UploadBatch {
+  id          String   @id @default(cuid())
+  userId      String
+  shopId      String
+  platform    String
+  periodType  String
+  periodStart DateTime
+  periodEnd   DateTime
+  compareType String?
+  status      String   @default("uploaded")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user                    User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shop                    Shop                      @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  files                   UploadedFile[]
+  shopMetrics             ShopMetric[]
+  promotionMetrics        PromotionMetric[]
+  productMetrics          ProductMetric[]
+  trafficSourceMetrics    TrafficSourceMetric[]
+  userProfileMetrics      UserProfileMetric[]
+  promotionPlanMetrics    PromotionPlanMetric[]
+  promotionAudienceMetrics PromotionAudienceMetric[]
+}
+
+model UploadedFile {
+  id          String   @id @default(cuid())
+  batchId     String
+  shopId      String
+  reportType  String
+  originalName String
+  storedPath  String
+  fileType    String
+  fileSize    Int
+  rowCount    Int      @default(0)
+  columnCount Int      @default(0)
+  parseStatus String   @default("uploaded")
+  parseError  String?
+  rawColumns  Json?
+  rawPreview  Json?
+  createdAt   DateTime @default(now())
+
+  batch UploadBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  shop  Shop        @relation(fields: [shopId], references: [id], onDelete: Cascade)
+}
+
+model FieldMapping {
+  id            String   @id @default(cuid())
+  platform      String
+  reportType    String
+  originalField String
+  standardField String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([platform, reportType, originalField])
+}
+
+model ShopMetric {
+  id             String   @id @default(cuid())
+  shopId         String
+  batchId        String
+  date           DateTime
+  traffic        Float    @default(0)
+  gmv            Float    @default(0)
+  gsv            Float    @default(0)
+  orders         Float    @default(0)
+  conversionRate Float    @default(0)
+  aov            Float    @default(0)
+  refundAmount   Float    @default(0)
+  refundRate     Float    @default(0)
+  createdAt      DateTime @default(now())
+
+  shop  Shop        @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  batch UploadBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+}
+
+model PromotionMetric {
+  id          String   @id @default(cuid())
+  shopId      String
+  batchId     String
+  date        DateTime
+  spend       Float    @default(0)
+  impressions Float    @default(0)
+  clicks      Float    @default(0)
+  ctr         Float    @default(0)
+  cpc         Float    @default(0)
+  traffic     Float    @default(0)
+  orders      Float    @default(0)
+  promoGmv    Float    @default(0)
+  roi         Float    @default(0)
+  createdAt   DateTime @default(now())
+
+  shop  Shop        @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  batch UploadBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+}
+
+model ProductMetric {
+  id                String   @id @default(cuid())
+  shopId            String
+  batchId           String
+  date              DateTime
+  productId         String
+  productName       String
+  traffic           Float    @default(0)
+  gmv               Float    @default(0)
+  gsv               Float    @default(0)
+  orders            Float    @default(0)
+  conversionRate    Float    @default(0)
+  aov               Float    @default(0)
+  refundAmount      Float    @default(0)
+  refundRate        Float    @default(0)
+  stock             Float    @default(0)
+  searchImpressions Float    @default(0)
+  createdAt         DateTime @default(now())
+
+  shop  Shop        @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  batch UploadBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+}
+
+model TrafficSourceMetric {
+  id             String   @id @default(cuid())
+  shopId         String
+  batchId        String
+  date           DateTime
+  channel        String
+  source1        String?
+  source2        String?
+  source3        String?
+  visitors       Float    @default(0)
+  buyers         Float    @default(0)
+  conversionRate Float    @default(0)
+  revenue        Float    @default(0)
+  uvValue        Float    @default(0)
+  createdAt      DateTime @default(now())
+
+  shop  Shop        @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  batch UploadBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+}
+
+model UserProfileMetric {
+  id             String   @id @default(cuid())
+  shopId         String
+  batchId        String
+  date           DateTime
+  userType       String
+  dimension      String
+  dimensionValue String
+  visitors       Float    @default(0)
+  buyers         Float    @default(0)
+  orders         Float    @default(0)
+  gmv            Float    @default(0)
+  aov            Float    @default(0)
+  conversionRate Float    @default(0)
+  createdAt      DateTime @default(now())
+
+  shop  Shop        @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  batch UploadBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+}
+
+model PromotionPlanMetric {
+  id             String   @id @default(cuid())
+  shopId         String
+  batchId        String
+  date           DateTime
+  planId         String
+  planName       String
+  spend          Float    @default(0)
+  revenue        Float    @default(0)
+  orders         Float    @default(0)
+  roi            Float    @default(0)
+  conversionRate Float    @default(0)
+  impressions    Float    @default(0)
+  clicks         Float    @default(0)
+  ctr            Float    @default(0)
+  cpc            Float    @default(0)
+  createdAt      DateTime @default(now())
+
+  shop  Shop        @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  batch UploadBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+}
+
+model PromotionAudienceMetric {
+  id             String   @id @default(cuid())
+  shopId         String
+  batchId        String
+  date           DateTime
+  planId         String
+  unitId         String
+  audienceId     String
+  audienceName   String
+  spend          Float    @default(0)
+  revenue        Float    @default(0)
+  orders         Float    @default(0)
+  roi            Float    @default(0)
+  conversionRate Float    @default(0)
+  impressions    Float    @default(0)
+  clicks         Float    @default(0)
+  ctr            Float    @default(0)
+  cpc            Float    @default(0)
+  createdAt      DateTime @default(now())
+
+  shop  Shop        @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  batch UploadBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+}
+
+model AnalysisReport {
+  id            String   @id @default(cuid())
+  userId        String
+  shopId        String
+  title         String
+  reportType    String   @default("period_review")
+  currentStart  DateTime
+  currentEnd    DateTime
+  previousStart DateTime?
+  previousEnd   DateTime?
+  status        String   @default("generated")
+  summaryJson   Json
+  reportJson    Json
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shop        Shop         @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  actionItems ActionItem[]
+}
+
+model ActionItem {
+  id              String   @id @default(cuid())
+  reportId        String?
+  shopId          String
+  priority        String
+  title           String
+  action          String
+  targetMetric    String
+  estimatedImpact String
+  owner           String?
+  dueDate         DateTime?
+  status          String   @default("未开始")
+  sourceType      String?
+  sourceId        String?
+  sourceEvidence  Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  report AnalysisReport? @relation(fields: [reportId], references: [id], onDelete: SetNull)
+  shop   Shop            @relation(fields: [shopId], references: [id], onDelete: Cascade)
+}

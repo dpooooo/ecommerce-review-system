@@ -1,0 +1,266 @@
+CREATE TABLE "User" (
+  "id" TEXT NOT NULL,
+  "name" TEXT NOT NULL,
+  "email" TEXT NOT NULL,
+  "passwordHash" TEXT NOT NULL,
+  "role" TEXT NOT NULL DEFAULT 'admin',
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL,
+  CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+);
+
+CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+
+CREATE TABLE "Shop" (
+  "id" TEXT NOT NULL,
+  "userId" TEXT NOT NULL,
+  "name" TEXT NOT NULL,
+  "platform" TEXT NOT NULL,
+  "shopCode" TEXT,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL,
+  CONSTRAINT "Shop_pkey" PRIMARY KEY ("id")
+);
+
+CREATE TABLE "UploadBatch" (
+  "id" TEXT NOT NULL,
+  "userId" TEXT NOT NULL,
+  "shopId" TEXT NOT NULL,
+  "platform" TEXT NOT NULL,
+  "periodType" TEXT NOT NULL,
+  "periodStart" TIMESTAMP(3) NOT NULL,
+  "periodEnd" TIMESTAMP(3) NOT NULL,
+  "compareType" TEXT,
+  "status" TEXT NOT NULL DEFAULT 'uploaded',
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL,
+  CONSTRAINT "UploadBatch_pkey" PRIMARY KEY ("id")
+);
+
+CREATE TABLE "UploadedFile" (
+  "id" TEXT NOT NULL,
+  "batchId" TEXT NOT NULL,
+  "shopId" TEXT NOT NULL,
+  "reportType" TEXT NOT NULL,
+  "originalName" TEXT NOT NULL,
+  "storedPath" TEXT NOT NULL,
+  "fileType" TEXT NOT NULL,
+  "fileSize" INTEGER NOT NULL,
+  "rowCount" INTEGER NOT NULL DEFAULT 0,
+  "columnCount" INTEGER NOT NULL DEFAULT 0,
+  "parseStatus" TEXT NOT NULL DEFAULT 'uploaded',
+  "parseError" TEXT,
+  "rawColumns" JSONB,
+  "rawPreview" JSONB,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "UploadedFile_pkey" PRIMARY KEY ("id")
+);
+
+CREATE TABLE "FieldMapping" (
+  "id" TEXT NOT NULL,
+  "platform" TEXT NOT NULL,
+  "reportType" TEXT NOT NULL,
+  "originalField" TEXT NOT NULL,
+  "standardField" TEXT NOT NULL,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL,
+  CONSTRAINT "FieldMapping_pkey" PRIMARY KEY ("id")
+);
+
+CREATE UNIQUE INDEX "FieldMapping_platform_reportType_originalField_key" ON "FieldMapping"("platform", "reportType", "originalField");
+
+CREATE TABLE "ShopMetric" (
+  "id" TEXT NOT NULL,
+  "shopId" TEXT NOT NULL,
+  "batchId" TEXT NOT NULL,
+  "date" TIMESTAMP(3) NOT NULL,
+  "traffic" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "gmv" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "gsv" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "orders" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "conversionRate" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "aov" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "refundAmount" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "refundRate" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "ShopMetric_pkey" PRIMARY KEY ("id")
+);
+
+CREATE TABLE "PromotionMetric" (
+  "id" TEXT NOT NULL,
+  "shopId" TEXT NOT NULL,
+  "batchId" TEXT NOT NULL,
+  "date" TIMESTAMP(3) NOT NULL,
+  "spend" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "impressions" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "clicks" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "ctr" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "cpc" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "traffic" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "orders" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "promoGmv" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "roi" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "PromotionMetric_pkey" PRIMARY KEY ("id")
+);
+
+CREATE TABLE "ProductMetric" (
+  "id" TEXT NOT NULL,
+  "shopId" TEXT NOT NULL,
+  "batchId" TEXT NOT NULL,
+  "date" TIMESTAMP(3) NOT NULL,
+  "productId" TEXT NOT NULL,
+  "productName" TEXT NOT NULL,
+  "traffic" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "gmv" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "gsv" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "orders" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "conversionRate" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "aov" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "refundAmount" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "refundRate" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "stock" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "searchImpressions" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "ProductMetric_pkey" PRIMARY KEY ("id")
+);
+
+CREATE TABLE "TrafficSourceMetric" (
+  "id" TEXT NOT NULL,
+  "shopId" TEXT NOT NULL,
+  "batchId" TEXT NOT NULL,
+  "date" TIMESTAMP(3) NOT NULL,
+  "channel" TEXT NOT NULL,
+  "source1" TEXT,
+  "source2" TEXT,
+  "source3" TEXT,
+  "visitors" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "buyers" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "conversionRate" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "revenue" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "uvValue" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "TrafficSourceMetric_pkey" PRIMARY KEY ("id")
+);
+
+CREATE TABLE "UserProfileMetric" (
+  "id" TEXT NOT NULL,
+  "shopId" TEXT NOT NULL,
+  "batchId" TEXT NOT NULL,
+  "date" TIMESTAMP(3) NOT NULL,
+  "userType" TEXT NOT NULL,
+  "dimension" TEXT NOT NULL,
+  "dimensionValue" TEXT NOT NULL,
+  "visitors" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "buyers" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "orders" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "gmv" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "aov" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "conversionRate" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "UserProfileMetric_pkey" PRIMARY KEY ("id")
+);
+
+CREATE TABLE "PromotionPlanMetric" (
+  "id" TEXT NOT NULL,
+  "shopId" TEXT NOT NULL,
+  "batchId" TEXT NOT NULL,
+  "date" TIMESTAMP(3) NOT NULL,
+  "planId" TEXT NOT NULL,
+  "planName" TEXT NOT NULL,
+  "spend" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "revenue" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "orders" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "roi" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "conversionRate" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "impressions" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "clicks" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "ctr" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "cpc" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "PromotionPlanMetric_pkey" PRIMARY KEY ("id")
+);
+
+CREATE TABLE "PromotionAudienceMetric" (
+  "id" TEXT NOT NULL,
+  "shopId" TEXT NOT NULL,
+  "batchId" TEXT NOT NULL,
+  "date" TIMESTAMP(3) NOT NULL,
+  "planId" TEXT NOT NULL,
+  "unitId" TEXT NOT NULL,
+  "audienceId" TEXT NOT NULL,
+  "audienceName" TEXT NOT NULL,
+  "spend" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "revenue" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "orders" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "roi" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "conversionRate" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "impressions" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "clicks" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "ctr" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "cpc" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "PromotionAudienceMetric_pkey" PRIMARY KEY ("id")
+);
+
+CREATE TABLE "AnalysisReport" (
+  "id" TEXT NOT NULL,
+  "userId" TEXT NOT NULL,
+  "shopId" TEXT NOT NULL,
+  "title" TEXT NOT NULL,
+  "reportType" TEXT NOT NULL DEFAULT 'period_review',
+  "currentStart" TIMESTAMP(3) NOT NULL,
+  "currentEnd" TIMESTAMP(3) NOT NULL,
+  "previousStart" TIMESTAMP(3),
+  "previousEnd" TIMESTAMP(3),
+  "status" TEXT NOT NULL DEFAULT 'generated',
+  "summaryJson" JSONB NOT NULL,
+  "reportJson" JSONB NOT NULL,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL,
+  CONSTRAINT "AnalysisReport_pkey" PRIMARY KEY ("id")
+);
+
+CREATE TABLE "ActionItem" (
+  "id" TEXT NOT NULL,
+  "reportId" TEXT,
+  "shopId" TEXT NOT NULL,
+  "priority" TEXT NOT NULL,
+  "title" TEXT NOT NULL,
+  "action" TEXT NOT NULL,
+  "targetMetric" TEXT NOT NULL,
+  "estimatedImpact" TEXT NOT NULL,
+  "owner" TEXT,
+  "dueDate" TIMESTAMP(3),
+  "status" TEXT NOT NULL DEFAULT '未开始',
+  "sourceType" TEXT,
+  "sourceId" TEXT,
+  "sourceEvidence" JSONB,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL,
+  CONSTRAINT "ActionItem_pkey" PRIMARY KEY ("id")
+);
+
+ALTER TABLE "Shop" ADD CONSTRAINT "Shop_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "UploadBatch" ADD CONSTRAINT "UploadBatch_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "UploadBatch" ADD CONSTRAINT "UploadBatch_shopId_fkey" FOREIGN KEY ("shopId") REFERENCES "Shop"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "UploadedFile" ADD CONSTRAINT "UploadedFile_batchId_fkey" FOREIGN KEY ("batchId") REFERENCES "UploadBatch"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "UploadedFile" ADD CONSTRAINT "UploadedFile_shopId_fkey" FOREIGN KEY ("shopId") REFERENCES "Shop"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "ShopMetric" ADD CONSTRAINT "ShopMetric_shopId_fkey" FOREIGN KEY ("shopId") REFERENCES "Shop"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "ShopMetric" ADD CONSTRAINT "ShopMetric_batchId_fkey" FOREIGN KEY ("batchId") REFERENCES "UploadBatch"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "PromotionMetric" ADD CONSTRAINT "PromotionMetric_shopId_fkey" FOREIGN KEY ("shopId") REFERENCES "Shop"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "PromotionMetric" ADD CONSTRAINT "PromotionMetric_batchId_fkey" FOREIGN KEY ("batchId") REFERENCES "UploadBatch"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "ProductMetric" ADD CONSTRAINT "ProductMetric_shopId_fkey" FOREIGN KEY ("shopId") REFERENCES "Shop"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "ProductMetric" ADD CONSTRAINT "ProductMetric_batchId_fkey" FOREIGN KEY ("batchId") REFERENCES "UploadBatch"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "TrafficSourceMetric" ADD CONSTRAINT "TrafficSourceMetric_shopId_fkey" FOREIGN KEY ("shopId") REFERENCES "Shop"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "TrafficSourceMetric" ADD CONSTRAINT "TrafficSourceMetric_batchId_fkey" FOREIGN KEY ("batchId") REFERENCES "UploadBatch"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "UserProfileMetric" ADD CONSTRAINT "UserProfileMetric_shopId_fkey" FOREIGN KEY ("shopId") REFERENCES "Shop"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "UserProfileMetric" ADD CONSTRAINT "UserProfileMetric_batchId_fkey" FOREIGN KEY ("batchId") REFERENCES "UploadBatch"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "PromotionPlanMetric" ADD CONSTRAINT "PromotionPlanMetric_shopId_fkey" FOREIGN KEY ("shopId") REFERENCES "Shop"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "PromotionPlanMetric" ADD CONSTRAINT "PromotionPlanMetric_batchId_fkey" FOREIGN KEY ("batchId") REFERENCES "UploadBatch"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "PromotionAudienceMetric" ADD CONSTRAINT "PromotionAudienceMetric_shopId_fkey" FOREIGN KEY ("shopId") REFERENCES "Shop"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "PromotionAudienceMetric" ADD CONSTRAINT "PromotionAudienceMetric_batchId_fkey" FOREIGN KEY ("batchId") REFERENCES "UploadBatch"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "AnalysisReport" ADD CONSTRAINT "AnalysisReport_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "AnalysisReport" ADD CONSTRAINT "AnalysisReport_shopId_fkey" FOREIGN KEY ("shopId") REFERENCES "Shop"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "ActionItem" ADD CONSTRAINT "ActionItem_reportId_fkey" FOREIGN KEY ("reportId") REFERENCES "AnalysisReport"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "ActionItem" ADD CONSTRAINT "ActionItem_shopId_fkey" FOREIGN KEY ("shopId") REFERENCES "Shop"("id") ON DELETE CASCADE ON UPDATE CASCADE;

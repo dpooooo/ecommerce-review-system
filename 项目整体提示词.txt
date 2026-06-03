@@ -1,0 +1,1922 @@
+你是一个资深全栈工程师、数据分析产品架构师、企业级 SaaS 产品开发工程师。
+
+请帮我从零开发一个完整可运行的 Web 项目，项目名称为：
+
+电商增长复盘系统
+
+这是一个面向电商运营、店长、推广负责人、老板使用的数据复盘分析平台。
+
+项目最终要部署到我的 Linux 服务器，服务器使用宝塔面板管理。数据库使用宝塔服务器自建 PostgreSQL，ORM 使用 Prisma。
+
+请不要只做静态页面，要开发真实可运行的全栈项目，包括用户登录、数据库、数据上传、字段映射、数据清洗、数据入库、经营驾驶舱、复盘分析、异常诊断、行动清单、报告生成、历史报告和宝塔部署文档。
+
+--------------------------------
+一、项目定位
+--------------------------------
+
+系统定位：
+
+电商增长复盘系统是一个“电商经营数据复盘与增长诊断平台”。
+
+它不是普通 BI 看板，而是一个经营诊断系统。
+
+核心链路：
+
+上传数据
+→ 字段识别
+→ 数据清洗
+→ 标准化入库
+→ 指标计算
+→ 多维度复盘分析
+→ 异常诊断
+→ 生成行动建议
+→ 生成经营复盘报告
+→ 历史报告沉淀
+
+系统要回答的问题：
+
+1. 本期经营结果变好还是变差？
+2. GMV / GSV 为什么变化？
+3. 哪些商品、渠道、推广计划、人群在拉动或拖累？
+4. 当前最应该处理哪些问题？
+5. 能否自动生成一份结构清晰的经营复盘报告？
+
+系统核心价值：
+
+结果如何
+→ 为什么变化
+→ 哪些对象有问题
+→ 先做什么动作
+→ 预估影响多少
+
+--------------------------------
+二、技术栈要求
+--------------------------------
+
+请使用以下技术栈：
+
+前端：
+- Next.js 14+，优先使用 App Router
+- React
+- TypeScript
+- Tailwind CSS
+- shadcn/ui
+- Recharts 或 ECharts
+- Zustand 或 React Context
+
+后端：
+- Next.js API Routes / Route Handlers
+- TypeScript
+- Prisma ORM
+- PostgreSQL
+
+数据库：
+- PostgreSQL
+- 使用宝塔面板服务器自建 PostgreSQL
+- Prisma datasource provider 使用 postgresql
+- DATABASE_URL 通过环境变量配置
+
+Prisma 官方文档中 PostgreSQL datasource 使用 provider = "postgresql"，数据库连接通过 DATABASE_URL 配置。请按这种方式配置。Prisma 支持连接 PostgreSQL 数据库，连接字符串放在环境变量里。参考 Prisma 官方 PostgreSQL connector 和 data source 设计。
+
+文件解析：
+- xlsx
+- xls
+- csv
+
+建议依赖：
+- prisma
+- @prisma/client
+- bcryptjs 或 bcrypt
+- jsonwebtoken 或 NextAuth
+- xlsx
+- papaparse
+- zod
+- dayjs
+- recharts 或 echarts-for-react
+- lucide-react
+- clsx
+- tailwind-merge
+
+文件存储：
+- 第一版使用服务器本地目录
+- 上传文件目录通过环境变量 UPLOAD_DIR 配置
+- 不要把上传文件放在会被 next build 清理的目录中
+- 推荐生产目录：/www/wwwroot/ecommerce-review-system/uploads
+
+部署：
+- 宝塔面板
+- Node.js 项目管理器或 PM2
+- Nginx 反向代理
+- PostgreSQL 数据库
+- SSL 证书
+- Next.js 支持生产构建和 Node.js server 部署。Next.js 官方文档说明，Next.js 可部署为 Node.js server、Docker container、static export 等模式，本项目使用 Node.js server 方式部署。
+
+--------------------------------
+三、项目目录结构建议
+--------------------------------
+
+请按清晰的工程结构开发。
+
+建议目录：
+
+/app
+  /(auth)
+    /login
+    /register
+  /(dashboard)
+    /dashboard
+    /upload
+    /data
+    /reports
+    /reports/[id]
+    /history
+    /settings
+  /api
+    /auth
+    /shops
+    /uploads
+    /field-mappings
+    /data
+    /analysis
+    /reports
+    /action-items
+    /dashboard
+
+/components
+  /layout
+    Sidebar.tsx
+    Topbar.tsx
+    DashboardLayout.tsx
+  /dashboard
+    MetricCard.tsx
+    TrendChart.tsx
+    AttributionBar.tsx
+    QuadrantChart.tsx
+    AnomalyList.tsx
+    ActionList.tsx
+    RecentReports.tsx
+  /upload
+    UploadDropzone.tsx
+    FieldPreview.tsx
+    FieldMappingTable.tsx
+  /reports
+    ReportHeader.tsx
+    ReportModule.tsx
+    ReportExportButton.tsx
+  /common
+
+/lib
+  /auth
+  /db
+  /utils
+  /format
+  /upload
+  /analysis
+    /standardize
+      fieldMapping.ts
+      cleaner.ts
+      validator.ts
+    /metrics
+      shopMetrics.ts
+      promotionMetrics.ts
+      productMetrics.ts
+      comparison.ts
+    /attribution
+      gmvAttribution.ts
+      gsvAttribution.ts
+    /diagnosis
+      productDiagnosis.ts
+      trafficDiagnosis.ts
+      promotionDiagnosis.ts
+      userDiagnosis.ts
+      anomalyCenter.ts
+      actionItems.ts
+    /report
+      reportBuilder.ts
+      conclusionBuilder.ts
+      recommendationBuilder.ts
+
+/prisma
+  schema.prisma
+  seed.ts
+
+/uploads
+  .gitkeep
+
+/docs
+  DEPLOY_BAOTA.md
+
+.env.example
+.env.production.example
+README.md
+
+--------------------------------
+四、页面要求
+--------------------------------
+
+请开发以下页面。
+
+--------------------------------
+1. 登录页 /login
+--------------------------------
+
+页面风格：
+- 科技感
+- 简约
+- 蓝白配色
+- 企业级 SaaS 风格
+- 中央登录卡片
+- 背景可以使用抽象数据图形、渐变、网格、柱状图元素
+
+内容：
+- 系统 Logo
+- 系统名称：电商增长复盘系统
+- 副标题：上传数据，自动诊断经营问题，生成复盘报告
+- 账号 / 邮箱输入框
+- 密码输入框
+- 记住登录
+- 忘记密码
+- 登录按钮
+- 注册入口
+
+--------------------------------
+2. 注册页 /register
+--------------------------------
+
+字段：
+- 用户名
+- 邮箱
+- 密码
+- 确认密码
+- 公司名称，可选
+- 注册按钮
+
+注册后跳转登录页或自动登录进入驾驶舱。
+
+--------------------------------
+3. 驾驶舱首页 /dashboard
+--------------------------------
+
+布局：
+- 左侧菜单
+- 顶部工具栏
+- 主数据区域
+
+左侧菜单：
+- 驾驶舱
+- 数据上传
+- 数据管理
+- 报告中心
+- 历史报告
+- 系统设置
+
+顶部栏：
+- 店铺选择
+- 日期范围选择
+- 上传数据按钮
+- 生成复盘报告按钮
+- 通知图标
+- 用户头像
+
+核心模块：
+
+A. KPI 指标卡片
+
+展示：
+- GMV
+- GSV
+- 订单数
+- 访客数
+- 转化率
+- 客单价
+- 退款金额
+- 退款率
+- 推广花费
+- 推广 ROI
+
+每个指标卡显示：
+- 当前值
+- 同比 / 环比变化
+- 上升 / 下降箭头
+- 小趋势线
+
+B. 经营总览
+
+展示一句总结：
+
+示例：
+本期 GMV 增长，主要由客单价提升拉动；但退款金额上升，对 GSV 形成侵蚀。
+
+状态：
+- 正常
+- 预警
+- 风险
+
+C. GMV / GSV 趋势图
+
+要求：
+- 折线图
+- 支持按日、按周、按月查看
+- 展示 GMV 和 GSV
+
+D. GMV 归因分析
+
+公式：
+GMV = 流量 × 转化率 × 客单价
+
+展示：
+- 流量贡献
+- 转化率贡献
+- 客单价贡献
+
+输出：
+- 当前值
+- 同期值
+- 贡献金额
+- 贡献占比
+- 拉动 / 拖累方向
+
+E. GSV 影响分析
+
+公式：
+GSV = GMV - 退款金额
+
+展示：
+- 成交增长贡献
+- 退款金额影响
+- GSV 净变化
+
+如果退款增加，要显示为：
+退款侵蚀 GSV
+
+F. 商品分析
+
+包含：
+- GMV Top 商品
+- 下滑商品
+- 异常商品
+- 高退款商品
+- 商品四象限
+
+商品四象限：
+- 高流量高转化：核心放量款
+- 高流量低转化：重点优化款
+- 低流量高转化：潜力加推款
+- 低流量低转化：观察 / 淘汰款
+
+G. 推广分析
+
+展示：
+- 推广花费
+- 推广成交
+- 推广 ROI
+- 展现
+- 点击
+- CTR
+- CPC
+- 高效推广计划 Top5
+- 低效推广计划 Top5
+- 高效人群 Top5
+- 低效人群 Top5
+
+H. 流量来源分析
+
+展示：
+- 访客数
+- 成交金额
+- 转化率
+- UV 价值
+- 高价值渠道
+- 低效渠道
+- 访客多但转化低的入口
+
+I. 用户经营分析
+
+展示：
+- 新客
+- 老客
+- PLUS 会员
+- 年龄
+- 地区
+- 城市
+- 购买力
+- 促销敏感度
+- 评论敏感度
+
+输出经营建议：
+- 老客复购权益
+- PLUS 高客单商品推荐
+- 强化评价、买家秀和售后保障
+- 组合优惠替代单纯降价
+
+J. 异常中心
+
+展示 P0 / P1 / P2 异常。
+
+异常字段：
+- priority
+- category
+- title
+- impact
+- reason
+- suggestion
+- relatedMetric
+- relatedObject
+
+示例：
+P0：退款金额上升
+影响：退款金额增加 12.3 万，侵蚀 GSV
+建议：排查高退款商品、售后原因、质量问题、物流问题
+
+K. 行动清单
+
+字段：
+- 优先级
+- 行动标题
+- 建议动作
+- 目标指标
+- 预估影响
+- 负责人
+- 截止时间
+- 状态
+
+状态：
+- 未开始
+- 进行中
+- 已完成
+- 已忽略
+
+L. 最近报告
+
+展示最近生成的报告：
+- 报告名称
+- 店铺
+- 周期
+- 生成时间
+- 查看
+- 下载
+
+--------------------------------
+4. 数据上传页 /upload
+--------------------------------
+
+功能：
+- 选择店铺
+- 选择平台
+- 选择数据周期
+- 选择报表类型
+- 上传文件
+- 支持 xlsx、xls、csv
+- 上传后预览字段
+- 自动字段识别
+- 字段映射确认
+- 确认入库
+
+报表类型：
+- 店铺数据 shop
+- 推广数据 promotion
+- 商品数据 product
+- 流量来源 traffic_source
+- 用户画像 user_profile
+- 推广计划 promotion_plan
+- 推广人群 promotion_audience
+
+上传模式：
+- 本期数据 current
+- 同期数据 previous
+- 普通历史数据 history
+
+上传完成后：
+- 保存原始文件
+- 保存上传批次
+- 解析表格
+- 字段映射
+- 数值清洗
+- 生成标准化数据
+- 写入 PostgreSQL 数据库
+
+--------------------------------
+5. 数据管理页 /data
+--------------------------------
+
+功能：
+- 查看上传批次
+- 查看原始文件
+- 查看标准化数据
+- 按店铺筛选
+- 按平台筛选
+- 按周期筛选
+- 按报表类型筛选
+- 删除错误数据
+- 重新清洗
+- 重新生成报告
+
+--------------------------------
+6. 报告中心 /reports
+--------------------------------
+
+功能：
+- 选择店铺
+- 选择本期日期
+- 选择同期日期
+- 选择分析模块
+- 生成报告
+
+模块开关：
+- 店铺大盘
+- GMV 归因
+- GSV 归因
+- 商品分析
+- 推广分析
+- 流量分析
+- 用户分析
+- 异常中心
+- 行动清单
+
+--------------------------------
+7. 报告详情页 /reports/[id]
+--------------------------------
+
+报告结构：
+- 报告标题
+- 店铺信息
+- 数据周期
+- 经营总览
+- 核心指标
+- GMV 归因
+- GSV 归因
+- 商品分析
+- 推广分析
+- 流量分析
+- 用户分析
+- 异常中心
+- 行动清单
+- 总结建议
+
+支持：
+- 在线查看
+- 导出 PDF
+- 导出图片
+- 复制报告摘要
+
+--------------------------------
+8. 历史报告页 /history
+--------------------------------
+
+功能：
+- 报告列表
+- 按店铺筛选
+- 按时间筛选
+- 按报告类型筛选
+- 查看报告
+- 删除报告
+- 下载报告
+
+--------------------------------
+9. 系统设置页 /settings
+--------------------------------
+
+功能：
+- 用户信息
+- 店铺管理
+- 字段映射配置
+- 指标口径配置
+- 四象限阈值配置
+- 用户权限管理
+
+--------------------------------
+五、数据库设计
+--------------------------------
+
+请使用 Prisma 设计 PostgreSQL 数据库。
+
+schema.prisma 中 datasource 必须使用：
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+Prisma 官方文档说明，Prisma 的 data source 用来配置数据库连接，PostgreSQL 使用 provider = "postgresql"，连接信息通过环境变量 DATABASE_URL 配置。
+
+核心表如下。
+
+--------------------------------
+1. User
+--------------------------------
+
+字段：
+- id
+- name
+- email
+- passwordHash
+- role
+- createdAt
+- updatedAt
+
+role：
+- admin
+- owner
+- manager
+- operator
+- viewer
+
+要求：
+- email 唯一
+- passwordHash 不允许为空
+- 密码必须加密存储
+
+--------------------------------
+2. Shop
+--------------------------------
+
+字段：
+- id
+- userId
+- name
+- platform
+- shopCode
+- createdAt
+- updatedAt
+
+platform 示例：
+- JD
+- TMALL
+- DOUYIN
+- PDD
+- OTHER
+
+--------------------------------
+3. UploadBatch
+--------------------------------
+
+字段：
+- id
+- userId
+- shopId
+- platform
+- periodType
+- periodStart
+- periodEnd
+- compareType
+- status
+- createdAt
+- updatedAt
+
+periodType：
+- current
+- previous
+- history
+
+status：
+- uploaded
+- parsed
+- cleaned
+- imported
+- failed
+
+--------------------------------
+4. UploadedFile
+--------------------------------
+
+字段：
+- id
+- batchId
+- shopId
+- reportType
+- originalName
+- storedPath
+- fileType
+- fileSize
+- rowCount
+- columnCount
+- parseStatus
+- parseError
+- createdAt
+
+reportType：
+- shop
+- promotion
+- product
+- traffic_source
+- user_profile
+- promotion_plan
+- promotion_audience
+
+--------------------------------
+5. FieldMapping
+--------------------------------
+
+字段：
+- id
+- platform
+- reportType
+- originalField
+- standardField
+- createdAt
+- updatedAt
+
+要求：
+- 同一个 platform + reportType + originalField 不重复
+
+--------------------------------
+6. ShopMetric
+--------------------------------
+
+字段：
+- id
+- shopId
+- batchId
+- date
+- traffic
+- gmv
+- gsv
+- orders
+- conversionRate
+- aov
+- refundAmount
+- refundRate
+- createdAt
+
+--------------------------------
+7. PromotionMetric
+--------------------------------
+
+字段：
+- id
+- shopId
+- batchId
+- date
+- spend
+- impressions
+- clicks
+- ctr
+- cpc
+- traffic
+- orders
+- promoGmv
+- roi
+- createdAt
+
+--------------------------------
+8. ProductMetric
+--------------------------------
+
+字段：
+- id
+- shopId
+- batchId
+- date
+- productId
+- productName
+- traffic
+- gmv
+- gsv
+- orders
+- conversionRate
+- aov
+- refundAmount
+- refundRate
+- stock
+- searchImpressions
+- createdAt
+
+--------------------------------
+9. TrafficSourceMetric
+--------------------------------
+
+字段：
+- id
+- shopId
+- batchId
+- date
+- channel
+- source1
+- source2
+- source3
+- visitors
+- buyers
+- conversionRate
+- revenue
+- uvValue
+- createdAt
+
+--------------------------------
+10. UserProfileMetric
+--------------------------------
+
+字段：
+- id
+- shopId
+- batchId
+- date
+- userType
+- dimension
+- dimensionValue
+- visitors
+- buyers
+- orders
+- gmv
+- aov
+- conversionRate
+- createdAt
+
+--------------------------------
+11. PromotionPlanMetric
+--------------------------------
+
+字段：
+- id
+- shopId
+- batchId
+- date
+- planId
+- planName
+- spend
+- revenue
+- orders
+- roi
+- conversionRate
+- impressions
+- clicks
+- ctr
+- cpc
+- createdAt
+
+--------------------------------
+12. PromotionAudienceMetric
+--------------------------------
+
+字段：
+- id
+- shopId
+- batchId
+- date
+- planId
+- unitId
+- audienceId
+- audienceName
+- spend
+- revenue
+- orders
+- roi
+- conversionRate
+- impressions
+- clicks
+- ctr
+- cpc
+- createdAt
+
+--------------------------------
+13. AnalysisReport
+--------------------------------
+
+字段：
+- id
+- userId
+- shopId
+- title
+- reportType
+- currentStart
+- currentEnd
+- previousStart
+- previousEnd
+- status
+- summaryJson
+- reportJson
+- createdAt
+- updatedAt
+
+PostgreSQL 中 summaryJson 和 reportJson 建议使用 Json 类型，对应 PostgreSQL jsonb 存储。
+
+--------------------------------
+14. ActionItem
+--------------------------------
+
+字段：
+- id
+- reportId
+- shopId
+- priority
+- title
+- action
+- targetMetric
+- estimatedImpact
+- owner
+- dueDate
+- status
+- sourceType
+- sourceId
+- createdAt
+- updatedAt
+
+--------------------------------
+六、字段映射和数据清洗规则
+--------------------------------
+
+文件读取层只负责把文件转成原始数据，不要做业务判断。
+
+支持格式：
+- xlsx
+- xls
+- csv
+
+读取后输出：
+- 文件名
+- 文件格式
+- 行数
+- 列数
+- 原始列名
+- 原始数据
+- 读取错误
+
+字段映射：
+系统需要把不同中文字段映射为标准字段。
+
+标准字段如下。
+
+店铺数据 shop：
+- traffic
+- gmv
+- gsv
+- orders
+- conversionRate
+- aov
+- refundAmount
+- refundRate
+
+推广数据 promotion：
+- spend
+- impressions
+- clicks
+- ctr
+- cpc
+- promoGmv
+- orders
+- traffic
+- roi
+
+商品数据 product：
+- productId
+- productName
+- traffic
+- gmv
+- gsv
+- orders
+- conversionRate
+- aov
+- refundAmount
+- refundRate
+- stock
+- searchImpressions
+
+流量来源 traffic_source：
+- channel
+- source1
+- source2
+- source3
+- visitors
+- buyers
+- conversionRate
+- revenue
+- uvValue
+
+用户画像 user_profile：
+- userType
+- dimension
+- dimensionValue
+- visitors
+- buyers
+- orders
+- gmv
+- aov
+- conversionRate
+
+推广计划 promotion_plan：
+- planId
+- planName
+- spend
+- revenue
+- orders
+- roi
+- conversionRate
+- impressions
+- clicks
+- ctr
+- cpc
+
+推广人群 promotion_audience：
+- planId
+- unitId
+- audienceId
+- audienceName
+- spend
+- revenue
+- orders
+- roi
+- conversionRate
+- impressions
+- clicks
+- ctr
+- cpc
+
+数值清洗规则：
+- 空值转为 0
+- "-" 转为 0
+- "--" 转为 0
+- 带 % 的字段转成小数，例如 12.5% → 0.125
+- 去掉金额符号
+- 去掉逗号
+- 去掉空格
+- 数量、金额、比例统一转数字
+
+派生字段规则：
+
+店铺和商品：
+- conversionRate = orders / traffic
+- aov = gmv / orders
+- gsv = gmv - refundAmount
+- refundRate = refundAmount / gmv
+
+推广：
+- ctr = clicks / impressions
+- cpc = spend / clicks
+- roi = promoGmv / spend
+- 如果总订单或总成交缺失，可以用直接订单 + 间接订单补齐
+
+商品特殊规则：
+- productId 为空的行剔除
+- 商品名为“合计”“总计”的行剔除
+- searchImpressions 为空或为 0 的商品，可以视为下架商品，不参与商品分析
+- 同一 productId 聚合成一行
+
+--------------------------------
+七、核心分析逻辑
+--------------------------------
+
+请把分析逻辑拆成独立模块，不要写成一个巨大函数。
+
+--------------------------------
+1. 店铺大盘 summarizeShop()
+--------------------------------
+
+输入：
+- current shop data
+- previous shop data
+- product data 可选
+
+汇总：
+- traffic
+- gmv
+- gsv
+- orders
+- refundAmount
+
+计算：
+- conversionRate
+- aov
+- refundRate
+
+补数：
+如果店铺表缺 GMV、GSV、流量、订单、退款等关键值，可以从商品表聚合补齐。
+但报告中要标注：
+由商品明细汇总补齐
+
+--------------------------------
+2. 推广大盘 summarizePromotion()
+--------------------------------
+
+汇总：
+- spend
+- impressions
+- clicks
+- traffic
+- orders
+- promoGmv
+
+计算：
+- ctr
+- cpc
+- roi
+
+--------------------------------
+3. 指标对比 compareMetrics()
+--------------------------------
+
+每个指标输出：
+- key
+- name
+- current
+- previous
+- delta
+- changeRate
+- displayChange
+- trend
+
+变化率：
+changeRate = (current - previous) / previous
+
+特殊情况：
+- previous = 0 且 current = 0，变化率为 0
+- previous = 0 且 current > 0，不显示 +100%，显示“新增”或“无同期基数”
+
+--------------------------------
+4. GMV 归因 gmvAttribution()
+--------------------------------
+
+公式：
+GMV = traffic × conversionRate × aov
+
+使用顺序替换法：
+
+顺序：
+1. 流量
+2. 转化率
+3. 客单价
+
+输出：
+- factor
+- name
+- current
+- previous
+- contribution
+- share
+- impactShare
+- direction
+
+业务解释：
+- contribution > 0 表示拉升
+- contribution < 0 表示拖累
+- impactShare 按绝对影响金额计算
+
+--------------------------------
+5. GSV 归因 gsvAttribution()
+--------------------------------
+
+公式：
+GSV = GMV - refundAmount
+
+逻辑：
+- 复用 GMV 中流量、转化率、客单价贡献
+- 增加退款影响
+- refundContribution = - (currentRefundAmount - previousRefundAmount)
+
+示例：
+退款金额从 10 万增加到 15 万：
+退款金额变化 = +5 万
+对 GSV 的贡献 = -5 万
+
+输出：
+- 成交增长贡献
+- 退款影响
+- GSV 净变化
+
+--------------------------------
+6. 商品分析 productAnalysis()
+--------------------------------
+
+步骤：
+- 今期商品和同期商品按 productId 合并
+- 计算：
+  - gmvDelta
+  - gmvChangeRate
+  - gsvDelta
+  - conversionDelta
+  - refundDelta
+  - refundRateDelta
+
+输出：
+- GMV Top10
+- 异常商品
+- 商品四象限
+
+商品异常识别：
+- GMV 下滑明显
+- 流量减少
+- 转化率下降
+- 退款率偏高
+- 退款金额增加
+
+商品四象限：
+第一版用均值作为阈值：
+
+- traffic >= avgTraffic 且 conversionRate >= avgConversionRate：
+  高流量高转化
+
+- traffic >= avgTraffic 且 conversionRate < avgConversionRate：
+  高流量低转化
+
+- traffic < avgTraffic 且 conversionRate >= avgConversionRate：
+  低流量高转化
+
+- traffic < avgTraffic 且 conversionRate < avgConversionRate：
+  低流量低转化
+
+每个象限需要输出：
+- 商品数量
+- 代表商品
+- 经营建议
+
+--------------------------------
+7. 流量来源分析 trafficSourceAnalysis()
+--------------------------------
+
+输出：
+- totalVisitors
+- totalRevenue
+- avgConversionRate
+- avgUvValue
+- channelSummary
+- topSources
+- lowEfficiencySources
+- highUvSources
+- actions
+
+低效入口识别：
+visitors >= 访客数 65 分位
+并且 conversionRate < max(avgConversionRate * 0.7, 0.01)
+
+建议：
+- 优化入口商品排序
+- 优化首屏卖点
+- 优化价格权益
+- 优化活动承接
+- 加码高 UV 价值入口
+
+--------------------------------
+8. 用户经营分析 userProfileAnalysis()
+--------------------------------
+
+维度：
+- 新客
+- 老客
+- PLUS
+- 年龄
+- 地区
+- 城市
+- 购买力
+- 促销敏感
+- 评论敏感
+- 会员等级
+
+判断：
+- 新客成交占比高：增长依赖拉新
+- 老客成交占比低：复购需要补
+- PLUS 客单价高：高价值身份标签
+- 高促销敏感：权益和价格机制重要
+- 高评论敏感：评价、买家秀、售后保障重要
+
+行动建议：
+- 老客复购权益包
+- PLUS 专属权益和高客单商品曝光
+- 强化评价、买家秀、售后保障
+- 用组合优惠替代单纯降价
+
+--------------------------------
+9. 推广计划与人群分析 promotionDetailAnalysis()
+--------------------------------
+
+输入：
+- promotion_plan
+- promotion_audience
+
+输出：
+- 计划数量
+- 总花费
+- 总成交
+- 平均 ROI
+- Top 计划
+- 低效计划
+- Top 人群
+- 低效人群
+- 推广行动建议
+
+判断：
+- 高成交高 ROI：加码
+- 高花费低 ROI：收缩或迁移预算
+- 高成交人群：加码
+- 低效人群：收缩、排除或重建
+
+--------------------------------
+10. 推广同比分析 promotionCompareAnalysis()
+--------------------------------
+
+计划对比：
+- 按 planId 合并
+- 分为：
+  - 可比计划
+  - 新增计划
+  - 停投计划
+- 计算：
+  - revenueDelta
+  - roiDelta
+  - spendDelta
+
+人群对比：
+- 用 planId + unitId + audienceId 作为 key
+- 分为：
+  - 可比人群
+  - 新增人群
+  - 停投人群
+
+注意：
+新增和停投对象不要硬算同比，要单独解释。
+
+--------------------------------
+11. 异常中心 buildAnomalyCenter()
+--------------------------------
+
+异常来源：
+- 店铺指标异常
+- 推广指标异常
+- 商品异常
+- GSV / 退款异常
+- 流量异常
+- 用户异常
+
+字段：
+- priority
+- category
+- title
+- impact
+- reason
+- suggestion
+- sourceModule
+- sourceObject
+- relatedMetric
+
+优先级：
+- P0：对 GSV、GMV、退款有明显金额影响
+- P1：明显影响经营效率
+- P2：需要关注但影响较小
+
+--------------------------------
+12. 行动清单 buildActionItems()
+--------------------------------
+
+行动来源：
+- GMV 归因最大拖累项
+- GSV 退款拖累
+- 商品异常
+- 推广 ROI / CPC 异常
+- 流量低效入口
+- 用户经营问题
+
+字段：
+- priority
+- title
+- action
+- targetMetric
+- estimatedImpact
+- owner
+- status
+- sourceEvidence
+
+原则：
+- 每条行动要绑定来源证据
+- 每条行动要有目标指标
+- 每条行动要有预估影响
+- 建议语言要像运营决策，而不是技术说明
+
+--------------------------------
+八、报告生成结构
+--------------------------------
+
+后端生成报告时，不要让前端直接理解复杂业务数据。
+请输出页面级 ReportSchema。
+
+ReportSchema 示例：
+
+{
+  "reportId": "...",
+  "title": "电商增长复盘报告",
+  "shop": {
+    "id": "...",
+    "name": "天猫旗舰店",
+    "platform": "TMALL"
+  },
+  "period": {
+    "current": {
+      "start": "2024-05-01",
+      "end": "2024-05-31"
+    },
+    "previous": {
+      "start": "2024-04-01",
+      "end": "2024-04-30"
+    }
+  },
+  "executiveSummary": {
+    "status": "normal",
+    "gmvSentence": "本期GMV增长，主要由客单价提升拉动。",
+    "gsvSentence": "退款金额上升，对GSV形成一定侵蚀。",
+    "topReasons": [],
+    "topActions": []
+  },
+  "metrics": [],
+  "modules": [
+    {
+      "key": "gmv_attribution",
+      "title": "GMV归因分析",
+      "summary": "...",
+      "cards": [],
+      "charts": [],
+      "tables": [],
+      "actions": []
+    }
+  ],
+  "anomalies": [],
+  "actionItems": []
+}
+
+报告页面结构固定为：
+
+1. 经营总览
+2. 核心指标
+3. GMV 归因
+4. GSV 归因
+5. 商品分析
+6. 流量来源分析
+7. 用户经营分析
+8. 推广计划与人群分析
+9. 异常中心
+10. 行动清单
+11. 总结建议
+
+结论生成规则：
+- 直接说经营结果
+- 解释核心原因
+- 给出下一步动作
+- 每条结论要带来源指标
+- 避免多条结论重复讲同一个因素
+
+示例结论：
+- GMV 增长，主要由客单价提升拉动。
+- GSV 增长低于 GMV，说明退款 / 售后对实际销售形成侵蚀。
+- 当前不是单一指标决定结果，而是增长项和风险项同时存在。
+- 建议优先处理高退款商品，并将预算从低 ROI 计划迁移到高 ROI 计划。
+
+--------------------------------
+九、API 设计
+--------------------------------
+
+认证：
+POST /api/auth/register
+POST /api/auth/login
+POST /api/auth/logout
+GET /api/auth/me
+
+店铺：
+GET /api/shops
+POST /api/shops
+PUT /api/shops/:id
+DELETE /api/shops/:id
+
+上传：
+POST /api/uploads
+GET /api/uploads
+GET /api/uploads/:id
+POST /api/uploads/:id/parse
+POST /api/uploads/:id/confirm-import
+
+字段映射：
+GET /api/field-mappings
+POST /api/field-mappings
+PUT /api/field-mappings/:id
+DELETE /api/field-mappings/:id
+
+数据：
+GET /api/data/shop
+GET /api/data/product
+GET /api/data/promotion
+GET /api/data/traffic-source
+GET /api/data/user-profile
+GET /api/data/promotion-plan
+GET /api/data/promotion-audience
+
+分析：
+POST /api/analysis/generate
+POST /api/analysis/from-db
+GET /api/analysis/:id
+
+报告：
+GET /api/reports
+GET /api/reports/:id
+POST /api/reports/:id/export-pdf
+DELETE /api/reports/:id
+
+行动清单：
+GET /api/action-items
+PUT /api/action-items/:id
+POST /api/action-items/:id/complete
+
+驾驶舱：
+GET /api/dashboard/overview?shopId=&start=&end=&compareStart=&compareEnd=
+
+--------------------------------
+十、前端设计风格
+--------------------------------
+
+整体风格：
+- 科技感
+- 简约
+- 企业级 SaaS
+- 蓝白主色
+- 卡片式布局
+- 圆角
+- 柔和阴影
+- 高信息密度但不杂乱
+- 重点数据突出
+- 图表清晰
+- 中文界面
+
+颜色建议：
+- 主色：#2563EB 或 #1677FF
+- 成功：#16A34A
+- 警告：#F59E0B
+- 危险：#EF4444
+- 背景：#F5F8FC
+- 卡片：#FFFFFF
+- 字体主色：#0F172A
+- 字体副色：#64748B
+
+组件：
+- Sidebar
+- Topbar
+- MetricCard
+- TrendChart
+- AttributionBar
+- QuadrantChart
+- DataTable
+- AnomalyList
+- ActionList
+- ReportCard
+- UploadDropzone
+- FieldMappingTable
+- DateRangePicker
+- ShopSelector
+
+--------------------------------
+十一、环境变量要求
+--------------------------------
+
+请生成：
+
+.env.example
+.env.production.example
+
+至少包含：
+
+DATABASE_URL=
+JWT_SECRET=
+NEXTAUTH_SECRET=
+NEXT_PUBLIC_APP_URL=
+UPLOAD_DIR=
+NODE_ENV=
+
+PostgreSQL 示例：
+
+DATABASE_URL="postgresql://postgres:your_password@127.0.0.1:5432/ecommerce_review_system?schema=public"
+
+生产环境示例：
+
+NODE_ENV="production"
+NEXT_PUBLIC_APP_URL="https://your-domain.com"
+UPLOAD_DIR="/www/wwwroot/ecommerce-review-system/uploads"
+
+要求：
+1. 不要把真实密码写死在代码里。
+2. 所有密钥、数据库连接、上传路径、站点 URL 都通过环境变量配置。
+3. 项目启动时要检查必要环境变量是否存在。
+4. 如果缺少关键环境变量，需要给出明确错误提示。
+
+--------------------------------
+十二、package.json 脚本要求
+--------------------------------
+
+请在 package.json 中提供这些脚本：
+
+"dev": "next dev",
+"build": "next build",
+"start": "next start -p 3000",
+"lint": "next lint",
+"prisma:generate": "prisma generate",
+"prisma:migrate": "prisma migrate dev",
+"prisma:deploy": "prisma migrate deploy",
+"prisma:studio": "prisma studio",
+"seed": "tsx prisma/seed.ts"
+
+--------------------------------
+十三、示例数据要求
+--------------------------------
+
+请内置一组 demo 数据，方便没有上传文件时也能看到完整效果。
+
+示例店铺：
+- 天猫旗舰店
+- 京东自营店
+- 抖音官方店
+
+示例指标：
+- GMV：2845.6 万
+- GSV：3210.8 万
+- 订单数：18735
+- 访客数：256780
+- 转化率：7.29%
+- 客单价：151.9 元
+- 退款金额：365.2 万
+- 推广 ROI：4.28
+
+示例经营结论：
+本期 GMV 增长，主要由客单价提升拉动；但退款金额上升，对 GSV 形成侵蚀。当前应优先处理高退款商品，并优化低 ROI 推广计划。
+
+请提供 seed 脚本：
+prisma/seed.ts
+
+seed 内容至少包括：
+- 一个管理员账号
+- 三个示例店铺
+- 一批示例店铺指标
+- 一批示例商品指标
+- 一批示例推广数据
+- 一份示例分析报告
+- 几条异常
+- 几条行动清单
+
+默认管理员账号：
+email: admin@example.com
+password: 123456
+
+注意：
+密码也要经过 hash 后入库。
+
+--------------------------------
+十四、宝塔部署要求
+--------------------------------
+
+项目完成后需要部署到我的 Linux 服务器，服务器使用宝塔面板管理。
+
+请在开发时提前考虑生产部署，不要只做本地开发版本。
+
+服务器部署环境：
+- 宝塔面板
+- Nginx
+- Node.js 20+
+- PostgreSQL
+- PM2 或宝塔 Node 项目管理器
+- SSL 证书
+
+项目部署路径建议：
+/www/wwwroot/ecommerce-review-system
+
+上传文件目录建议：
+/www/wwwroot/ecommerce-review-system/uploads
+
+Node 项目运行端口：
+3000
+
+Nginx 反向代理：
+https://我的域名
+→ http://127.0.0.1:3000
+
+要求：
+1. 支持 Linux 服务器运行。
+2. 支持宝塔 Node 项目管理器 / PM2 部署。
+3. 支持 next build 和 next start 生产运行。
+4. 上传目录必须可配置。
+5. 上传目录必须确保 Node 进程可写。
+6. 日志错误要清晰。
+7. API 在反向代理下要正常访问。
+
+--------------------------------
+十五、宝塔部署文档要求
+--------------------------------
+
+请在项目根目录生成：
+
+DEPLOY_BAOTA.md
+
+文档必须用中文编写，适合新手按步骤操作。
+
+内容包括：
+
+1. 宝塔面板准备
+   - 安装 Nginx
+   - 安装 Node.js 20+
+   - 安装 PostgreSQL
+   - 安装 PM2 或使用宝塔 Node 项目管理器
+
+2. 创建 PostgreSQL 数据库
+   - 数据库名建议：ecommerce_review_system
+   - 创建数据库用户
+   - 设置数据库密码
+   - 配置 DATABASE_URL
+
+3. 上传项目代码
+   - 推荐目录：/www/wwwroot/ecommerce-review-system
+
+4. 安装依赖
+   - npm install
+   - 如果 npm 镜像异常，提供切换官方源和 npmmirror 的命令
+
+5. 配置环境变量
+   - 复制 .env.production.example 为 .env.production
+   - 填写 DATABASE_URL
+   - 填写 JWT_SECRET
+   - 填写 NEXTAUTH_SECRET
+   - 填写 NEXT_PUBLIC_APP_URL
+   - 填写 UPLOAD_DIR
+
+6. 初始化数据库
+   - npx prisma generate
+   - npx prisma migrate deploy
+   - npm run seed，可选
+
+7. 构建项目
+   - npm run build
+
+8. 启动项目
+   - npm run start
+   - 或使用 PM2：
+     pm2 start npm --name ecommerce-review-system -- start
+     pm2 save
+
+9. 宝塔反向代理设置
+   - 网站域名绑定
+   - 反向代理到 http://127.0.0.1:3000
+   - 开启 SSL
+   - 强制 HTTPS
+
+10. 上传目录权限
+   - 创建 uploads 目录
+   - 设置可写权限
+   - 确保 Node 进程有权限写入文件
+
+11. 常见问题排查
+   - npm install 失败
+   - Prisma 连接 PostgreSQL 失败
+   - 端口 3000 被占用
+   - 上传文件失败
+   - 反向代理 502
+   - next build 内存不足
+   - 页面可以访问但 API 报错
+   - 登录后 Cookie / Token 异常
+   - PostgreSQL 权限不足
+
+--------------------------------
+十六、开发顺序
+--------------------------------
+
+请按以下顺序开发。
+
+阶段 1：项目初始化
+- 创建 Next.js 项目
+- 配置 TypeScript
+- 配置 Tailwind
+- 配置 shadcn/ui
+- 配置 Prisma
+- 配置 PostgreSQL datasource
+- 创建基础目录结构
+
+阶段 2：登录和基础布局
+- 登录页
+- 注册页
+- DashboardLayout
+- Sidebar
+- Topbar
+- 登录态保护
+
+阶段 3：数据库模型
+- User
+- Shop
+- UploadBatch
+- UploadedFile
+- FieldMapping
+- 标准数据表
+- AnalysisReport
+- ActionItem
+- 执行 Prisma migration
+
+阶段 4：上传和解析
+- 文件上传
+- 本地存储
+- xlsx/csv 解析
+- 字段预览
+- 字段映射
+- 数据清洗
+- 入库
+
+阶段 5：驾驶舱
+- KPI 卡片
+- 趋势图
+- 经营总览
+- GMV 归因
+- GSV 影响
+- 商品分析
+- 推广分析
+- 异常中心
+- 行动清单
+- 最近报告
+
+阶段 6：分析引擎
+- summarizeShop
+- summarizePromotion
+- compareMetrics
+- gmvAttribution
+- gsvAttribution
+- productAnalysis
+- trafficSourceAnalysis
+- userProfileAnalysis
+- promotionDetailAnalysis
+- anomalyCenter
+- actionItems
+- reportBuilder
+
+阶段 7：报告中心
+- 生成报告
+- 报告详情页
+- 历史报告
+- PDF 导出
+
+阶段 8：部署准备
+- README
+- DEPLOY_BAOTA.md
+- .env.example
+- .env.production.example
+- 生产构建测试
+- PostgreSQL migration 测试
+- seed 测试
+
+--------------------------------
+十七、MVP 验收标准
+--------------------------------
+
+第一版必须做到：
+
+1. 用户可以注册和登录。
+2. 用户可以创建店铺。
+3. 用户可以上传 Excel 或 CSV。
+4. 系统可以识别报表类型。
+5. 系统可以预览字段并完成字段映射。
+6. 系统可以清洗数据并写入 PostgreSQL。
+7. 驾驶舱可以展示核心指标。
+8. 可以计算 GMV / GSV / 订单 / 流量 / 转化率 / 客单价 / 退款 / ROI。
+9. 可以生成 GMV 归因。
+10. 可以生成 GSV 影响分析。
+11. 可以展示商品 Top10 和异常商品。
+12. 可以展示商品四象限。
+13. 可以展示推广分析。
+14. 可以生成异常中心。
+15. 可以生成行动清单。
+16. 可以生成一份在线复盘报告。
+17. 可以查看历史报告。
+18. 可以通过 npm run build 成功构建。
+19. 可以通过 npm run start 在生产环境启动。
+20. README 和 DEPLOY_BAOTA.md 完整。
+21. 适合部署到宝塔面板服务器。
+22. 界面科技简约，适合电商运营团队使用。
+
+--------------------------------
+十八、上线前检查
+--------------------------------
+
+上线前请确保：
+
+1. 本地开发环境可以正常运行。
+2. 生产环境可以通过 npm run build 成功构建。
+3. 生产环境可以通过 npm run start 启动。
+4. PostgreSQL 数据库 migration 可以正常执行。
+5. npx prisma generate 可以正常执行。
+6. npx prisma migrate deploy 可以正常执行。
+7. seed 脚本可以正常执行。
+8. 登录注册功能可用。
+9. 上传文件功能可用。
+10. 上传目录在 Linux 环境下可写。
+11. 生成报告功能可用。
+12. 历史报告可以读取。
+13. 页面刷新后不会丢失登录状态。
+14. API 路由在 Nginx 反向代理下可以正常访问。
+15. 域名绑定后可以正常访问。
+16. HTTPS 下上传、登录、接口请求都正常。
+17. 宝塔部署文档足够清晰，新手可以照着部署。
+
+--------------------------------
+十九、重要要求
+--------------------------------
+
+1. 不要只做静态页面，要有真实数据库结构和 API。
+2. 数据库必须使用 PostgreSQL。
+3. ORM 必须使用 Prisma。
+4. 不要把分析逻辑全部写在页面里，要抽成独立 analysis 模块。
+5. 前端页面消费 ReportSchema，不直接理解复杂原始数据。
+6. 上传文件、字段映射、清洗、入库、分析、报告生成要形成完整链路。
+7. 所有金额、比例、数量要有统一格式化函数。
+8. 所有异常和行动建议要有来源证据。
+9. 代码结构要清晰，方便后续扩展京东、天猫、抖音、拼多多等平台。
+10. 页面优先保证 PC 端体验。
+11. 中文界面。
+12. 请生成完整可运行项目代码。
+13. 请提供 README，说明如何安装、配置 PostgreSQL、启动项目、上传示例数据、生成报告。
+14. 请提供 DEPLOY_BAOTA.md，说明如何部署到宝塔服务器。
+15. 请尽量保证代码可维护、可扩展、可继续迭代。
+
+请从项目初始化开始，逐步实现完整 MVP。
