@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createSession } from "@/lib/auth/session";
 import { verifyPassword } from "@/lib/auth/password";
 import { prisma } from "@/lib/db/prisma";
+import { appUrl } from "@/lib/url";
 
 const schema = z.object({
   email: z.string().email(),
@@ -18,5 +19,5 @@ export async function POST(request: Request) {
   }
   await createSession(user.id);
   const next = String(form.get("next") || "/dashboard");
-  return NextResponse.redirect(new URL(next.startsWith("/") ? next : "/dashboard", request.url));
+  return NextResponse.redirect(appUrl(next.startsWith("/") ? next : "/dashboard", request.url));
 }

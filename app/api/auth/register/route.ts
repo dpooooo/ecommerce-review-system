@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createSession } from "@/lib/auth/session";
 import { hashPassword } from "@/lib/auth/password";
 import { prisma } from "@/lib/db/prisma";
+import { appUrl } from "@/lib/url";
 
 const schema = z.object({
   name: z.string().min(1),
@@ -26,5 +27,5 @@ export async function POST(request: Request) {
     }
   });
   await createSession(user.id);
-  return NextResponse.redirect(new URL("/dashboard", request.url));
+  return NextResponse.redirect(appUrl("/dashboard", request.url));
 }

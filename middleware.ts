@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { appUrl } from "@/lib/url";
 
 const protectedPrefixes = ["/dashboard", "/upload", "/data", "/reports", "/history", "/settings"];
 
@@ -11,7 +12,7 @@ export function middleware(request: NextRequest) {
   const session = request.cookies.get("ers_session")?.value;
   if (session) return NextResponse.next();
 
-  const loginUrl = new URL("/login", request.url);
+  const loginUrl = appUrl("/login", request.url);
   loginUrl.searchParams.set("next", pathname);
   return NextResponse.redirect(loginUrl);
 }

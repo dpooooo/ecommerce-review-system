@@ -21,7 +21,7 @@ export async function GET() {
       uploadDir: resolvedUploadDir,
       uploadWritable: true,
       nodeEnv: process.env.NODE_ENV || "unknown",
-      appUrl: process.env.NEXT_PUBLIC_APP_URL || "",
+      appUrl: process.env["NEXT_PUBLIC_APP_URL"] || "",
       latencyMs: Date.now() - startedAt,
       checkedAt: new Date().toISOString()
     });
@@ -33,7 +33,7 @@ export async function GET() {
         uploadDir: resolvedUploadDir,
         uploadWritable: false,
         nodeEnv: process.env.NODE_ENV || "unknown",
-        appUrl: process.env.NEXT_PUBLIC_APP_URL || "",
+        appUrl: process.env["NEXT_PUBLIC_APP_URL"] || "",
         error: error instanceof Error ? error.message : "health check failed",
         checkedAt: new Date().toISOString()
       },
