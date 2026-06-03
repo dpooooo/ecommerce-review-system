@@ -145,6 +145,14 @@ npm run build
 
 健康检查会验证数据库连接，并返回上传目录路径。
 
+登录后台后也可以访问：
+
+```text
+/settings/deployment
+```
+
+该页面会展示环境变量状态、健康检查入口和部署测试清单。
+
 PM2 部署可使用根目录的 `ecosystem.config.js`：
 
 ```bash

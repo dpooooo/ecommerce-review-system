@@ -162,6 +162,14 @@ curl http://127.0.0.1:3001/api/health
 
 返回 `ok: true` 说明 Node 服务和 PostgreSQL 连接正常。
 
+也可以登录后台后访问：
+
+```text
+/settings/deployment
+```
+
+该页面会展示环境变量、上传目录和部署测试清单，方便逐项核对。
+
 ## 10. 上传目录权限
 
 创建上传目录：

@@ -3,6 +3,10 @@ import { constants } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { setTimeout as sleep } from "node:timers/promises";
+import nextEnv from "@next/env";
+
+const { loadEnvConfig } = nextEnv;
+loadEnvConfig(process.cwd(), process.env.NODE_ENV !== "production");
 
 const required = ["DATABASE_URL", "JWT_SECRET", "NEXT_PUBLIC_APP_URL", "UPLOAD_DIR", "NODE_ENV"];
 const missing = required.filter((key) => !process.env[key]);

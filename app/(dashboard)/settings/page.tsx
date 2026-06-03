@@ -1,4 +1,5 @@
 import { revalidatePath } from "next/cache";
+import Link from "next/link";
 import { Card } from "@/components/common/Card";
 import { getSessionUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
@@ -111,6 +112,11 @@ export default async function SettingsPage() {
             <div><span className="text-slate-500">邮箱：</span>{user?.email || "-"}</div>
             <div><span className="text-slate-500">角色：</span>{user?.role || "-"}</div>
           </div>
+        </Card>
+        <Card className="p-5">
+          <h2 className="font-semibold text-slate-950">部署检查</h2>
+          <p className="mt-2 text-sm text-slate-500">查看生产环境变量、健康检查接口和部署测试清单。</p>
+          <Link href="/settings/deployment" className="mt-4 inline-flex h-10 items-center rounded-md border border-slate-200 px-4 text-sm text-slate-700">打开检查页</Link>
         </Card>
       </div>
 
