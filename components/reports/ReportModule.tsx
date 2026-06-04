@@ -1,4 +1,6 @@
 import { Card } from "@/components/common/Card";
+import { ProductQuadrantChart, TopProductChart } from "@/components/dashboard/ProductCharts";
+import { ReportChart } from "@/components/reports/ReportChart";
 import { formatMoney, formatNumber, formatPercent } from "@/lib/format";
 
 type ReportModuleData = {
@@ -64,8 +66,18 @@ function ProductAnalysis({ table }: { table: Record<string, unknown> }) {
   const topProducts = (table.topProducts || []) as Array<Record<string, unknown>>;
   const quadrants = (table.quadrants || []) as Array<Record<string, unknown>>;
   return (
-    <div className="mt-4 grid grid-cols-3 gap-4">
-      <div className="col-span-2">
+    <div className="mt-4 space-y-4">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <div className="rounded-md border border-slate-200 p-3">
+          <div className="text-sm font-medium text-slate-700">GMV Top 商品</div>
+          <TopProductChart items={topProducts} />
+        </div>
+        <div className="rounded-md border border-slate-200 p-3">
+          <div className="text-sm font-medium text-slate-700">商品四象限结构</div>
+          <ProductQuadrantChart items={quadrants} />
+        </div>
+      </div>
+      <div>
         <SimpleTable
           rows={topProducts.slice(0, 8)}
           columns={[
@@ -76,32 +88,6 @@ function ProductAnalysis({ table }: { table: Record<string, unknown> }) {
           ]}
         />
       </div>
-      <div className="space-y-3">
-        {quadrants.map((item) => (
-          <div key={text(item.key)} className="rounded-md border border-slate-200 p-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-slate-900">{text(item.name)}</span>
-              <span className="text-lg font-semibold text-brand-700">{text(item.count)}</span>
-            </div>
-            <p className="mt-1 text-xs text-slate-500">{text(item.advice)}</p>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function TrendPreview({ data }: { data: Array<Record<string, unknown>> }) {
-  if (!data.length) return null;
-  const max = Math.max(...data.map((item) => asNumber(item.gmv)), 1);
-  return (
-    <div className="mt-4 flex h-32 items-end gap-2 rounded-md border border-slate-200 bg-slate-50 p-4">
-      {data.map((item, index) => (
-        <div key={index} className="flex flex-1 flex-col items-center gap-2">
-          <div className="w-full rounded-t bg-brand-600" style={{ height: `${Math.max(8, (asNumber(item.gmv) / max) * 90)}px` }} />
-          <span className="text-[11px] text-slate-500">{text(item.date)}</span>
-        </div>
-      ))}
     </div>
   );
 }
@@ -116,7 +102,7 @@ export function ReportModule({ module, index }: { module: ReportModuleData; inde
       <h2 className="font-semibold">{index}. {module.title}</h2>
       <p className="mt-2 text-sm text-slate-600">{module.summary}</p>
 
-      {module.key === "trend" ? <TrendPreview data={chartData} /> : null}
+      <ReportChart moduleKey={module.key} chartData={chartData} tableData={tableData} />
       {module.key === "gmv_attribution" ? <AttributionTable rows={tableData} /> : null}
       {module.key === "gsv_attribution" ? (
         <SimpleTable rows={tableData} columns={[{ key: "name", label: "因素" }, { key: "contribution", label: "贡献", format: "money" }, { key: "direction", label: "方向" }]} />

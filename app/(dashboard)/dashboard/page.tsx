@@ -1,7 +1,8 @@
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { TrendChart } from "@/components/dashboard/TrendChart";
-import { AttributionBar } from "@/components/dashboard/AttributionBar";
+import { AttributionChart } from "@/components/dashboard/AttributionChart";
+import { ProductQuadrantChart, TopProductChart } from "@/components/dashboard/ProductCharts";
 import { AnomalyList } from "@/components/dashboard/AnomalyList";
 import { ActionList } from "@/components/dashboard/ActionList";
 import { Card } from "@/components/common/Card";
@@ -52,7 +53,7 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {report.metrics.map((metric) => <MetricCard key={metric.key} metric={metric} />)}
       </div>
 
@@ -66,7 +67,7 @@ export default async function DashboardPage() {
         </div>
       </Card>
 
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <Card className="col-span-2 p-5">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-semibold text-slate-950">GMV / GSV 趋势</h2>
@@ -76,22 +77,14 @@ export default async function DashboardPage() {
         </Card>
         <Card className="p-5">
           <h2 className="mb-4 font-semibold text-slate-950">GMV 归因分析</h2>
-          <AttributionBar items={gmv} />
+          <AttributionChart items={gmv} />
         </Card>
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <Card className="p-5">
           <h2 className="mb-4 font-semibold text-slate-950">商品四象限</h2>
-          <div className="grid grid-cols-2 gap-3">
-            {product.quadrants.map((item) => (
-              <div key={String(item.key)} className="rounded-md border border-slate-200 p-3">
-                <div className="text-sm font-medium text-slate-900">{String(item.name)}</div>
-                <div className="mt-1 text-2xl font-semibold text-brand-700">{String(item.count)}</div>
-                <div className="mt-1 text-xs text-slate-500">{String(item.advice)}</div>
-              </div>
-            ))}
-          </div>
+          <ProductQuadrantChart items={product.quadrants} />
         </Card>
         <Card className="p-5">
           <h2 className="mb-4 font-semibold text-slate-950">异常中心</h2>
@@ -99,14 +92,7 @@ export default async function DashboardPage() {
         </Card>
         <Card className="p-5">
           <h2 className="mb-4 font-semibold text-slate-950">GMV Top 商品</h2>
-          <div className="space-y-3">
-            {product.topProducts.slice(0, 5).map((item, index) => (
-              <div key={String(item.productId)} className="flex items-center justify-between text-sm">
-                <span className="text-slate-700">{index + 1}. {String(item.productName)}</span>
-                <span className="font-medium text-slate-950">{(Number(item.gmv) / 10000).toFixed(1)}万</span>
-              </div>
-            ))}
-          </div>
+          <TopProductChart items={product.topProducts} />
         </Card>
       </div>
 

@@ -49,7 +49,7 @@ export default async function ReportDetailPage({ params }: { params: Promise<{ i
   const report = await loadReport(id);
   return (
     <div className="space-y-6">
-      <div className="flex items-end justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-slate-950">{report.title}</h1>
           <p className="mt-1 text-sm text-slate-500">{report.shop.name} · {report.period.current.start} 至 {report.period.current.end}</p>
@@ -59,13 +59,13 @@ export default async function ReportDetailPage({ params }: { params: Promise<{ i
       <Card className="p-5">
         <h2 className="font-semibold">1. 经营总览</h2>
         <p className="mt-2 text-slate-700">{report.executiveSummary.gmvSentence}{report.executiveSummary.gsvSentence}</p>
-        <div className="mt-4 grid grid-cols-3 gap-3">
+        <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
           {report.executiveSummary.topReasons.map((reason) => <div key={reason} className="rounded-md bg-brand-50 p-3 text-sm text-brand-700">{reason}</div>)}
         </div>
       </Card>
       <Card className="p-5">
         <h2 className="mb-4 font-semibold">2. 核心指标</h2>
-        <div className="grid grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
           {report.metrics.map((metric) => (
             <div key={metric.key} className="rounded-md bg-slate-50 p-3">
               <div className="text-sm text-slate-500">{metric.name}</div>
