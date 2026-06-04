@@ -22,8 +22,12 @@ function asText(value: unknown, fallback = "") {
   return text || fallback;
 }
 
-function metricDate(batch: { periodEnd: Date }) {
-  return batch.periodEnd;
+function metricDate(row: Record<string, unknown>, batch: { periodEnd: Date }) {
+  const periodEnd = asText(row.periodEnd);
+  if (!periodEnd) return batch.periodEnd;
+
+  const date = new Date(`${periodEnd}T00:00:00Z`);
+  return Number.isNaN(date.getTime()) ? batch.periodEnd : date;
 }
 
 export async function importUploadedFile(params: {
@@ -40,14 +44,13 @@ export async function importUploadedFile(params: {
 
   const mapping = params.mapping?.length ? params.mapping : guessFieldMapping(parsed.rawColumns);
   const rows = applyMapping(parsed.rawData, mapping);
-  const date = metricDate(params.batch);
 
   if (params.file.reportType === "shop") {
     await params.prisma.shopMetric.createMany({
       data: rows.map((row) => ({
         shopId: params.batch.shopId,
         batchId: params.batch.id,
-        date,
+        date: metricDate(row, params.batch),
         ...deriveShopMetric(row)
       }))
     });
@@ -60,14 +63,16 @@ export async function importUploadedFile(params: {
       const productId = asText(row.productId);
       const productName = asText(row.productName);
       if (!productId || ["合计", "总计"].includes(productName)) return;
-      const current = grouped.get(productId) || { productId, productName, traffic: 0, gmv: 0, orders: 0, refundAmount: 0, stock: 0, searchImpressions: 0 };
+      const date = metricDate(row, params.batch);
+      const groupKey = `${date.toISOString()}::${productId}`;
+      const current = grouped.get(groupKey) || { productId, productName, date: date.toISOString(), traffic: 0, gmv: 0, orders: 0, refundAmount: 0, stock: 0, searchImpressions: 0 };
       current.traffic = Number(current.traffic) + cleanNumber(row.traffic);
       current.gmv = Number(current.gmv) + cleanNumber(row.gmv);
       current.orders = Number(current.orders) + cleanNumber(row.orders);
       current.refundAmount = Number(current.refundAmount) + cleanNumber(row.refundAmount);
       current.stock = Number(current.stock) + cleanNumber(row.stock);
       current.searchImpressions = Number(current.searchImpressions) + cleanNumber(row.searchImpressions);
-      grouped.set(productId, current);
+      grouped.set(groupKey, current);
     });
     const data = [...grouped.values()].map((row) => {
       const gmv = Number(row.gmv);
@@ -77,7 +82,7 @@ export async function importUploadedFile(params: {
       return {
         shopId: params.batch.shopId,
         batchId: params.batch.id,
-        date,
+        date: new Date(String(row.date)),
         productId: String(row.productId),
         productName: String(row.productName),
         traffic,
@@ -106,7 +111,7 @@ export async function importUploadedFile(params: {
         return {
           shopId: params.batch.shopId,
           batchId: params.batch.id,
-          date,
+          date: metricDate(row, params.batch),
           spend,
           impressions,
           clicks,
@@ -131,7 +136,7 @@ export async function importUploadedFile(params: {
         return {
           shopId: params.batch.shopId,
           batchId: params.batch.id,
-          date,
+          date: metricDate(row, params.batch),
           channel: asText(row.channel, "未命名渠道"),
           source1: asText(row.source1) || null,
           source2: asText(row.source2) || null,
@@ -157,7 +162,7 @@ export async function importUploadedFile(params: {
         return {
           shopId: params.batch.shopId,
           batchId: params.batch.id,
-          date,
+          date: metricDate(row, params.batch),
           userType: asText(row.userType, "未分类用户"),
           dimension: asText(row.dimension, "默认维度"),
           dimensionValue: asText(row.dimensionValue, "未分类"),
@@ -183,7 +188,7 @@ export async function importUploadedFile(params: {
         return {
           shopId: params.batch.shopId,
           batchId: params.batch.id,
-          date,
+          date: metricDate(row, params.batch),
           planId: asText(row.planId, crypto.randomUUID()),
           planName: asText(row.planName, "未命名计划"),
           spend,
@@ -211,7 +216,7 @@ export async function importUploadedFile(params: {
         return {
           shopId: params.batch.shopId,
           batchId: params.batch.id,
-          date,
+          date: metricDate(row, params.batch),
           planId: asText(row.planId, "unknown-plan"),
           unitId: asText(row.unitId, "unknown-unit"),
           audienceId: asText(row.audienceId, crypto.randomUUID()),

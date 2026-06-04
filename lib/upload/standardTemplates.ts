@@ -187,25 +187,37 @@ export function validateStandardTemplateRows(
     if (missingRow >= 0) errors.push(`第 ${missingRow + 2} 行缺少必填字段“${column.label}”。`);
   });
 
-  const firstRow = rows[0];
-  const periodStart = String(firstRow?.["统计开始日期"] ?? "").trim();
-  const periodEnd = String(firstRow?.["统计结束日期"] ?? "").trim();
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(periodStart)) errors.push("统计开始日期必须使用 YYYY-MM-DD 格式。");
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(periodEnd)) errors.push("统计结束日期必须使用 YYYY-MM-DD 格式。");
-  const startDate = new Date(`${periodStart}T00:00:00Z`);
-  const endDate = new Date(`${periodEnd}T00:00:00Z`);
-  if (Number.isNaN(startDate.getTime())) errors.push("统计开始日期不是有效日期。");
-  if (Number.isNaN(endDate.getTime())) errors.push("统计结束日期不是有效日期。");
-  if (!Number.isNaN(startDate.getTime()) && !Number.isNaN(endDate.getTime()) && startDate > endDate) {
-    errors.push("统计开始日期不能晚于统计结束日期。");
-  }
+  const validPeriods = rows.flatMap((row, index) => {
+    const periodStart = String(row["统计开始日期"] ?? "").trim();
+    const periodEnd = String(row["统计结束日期"] ?? "").trim();
+    const rowNumber = index + 2;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(periodStart)) {
+      errors.push(`第 ${rowNumber} 行的统计开始日期必须使用 YYYY-MM-DD 格式。`);
+      return [];
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(periodEnd)) {
+      errors.push(`第 ${rowNumber} 行的统计结束日期必须使用 YYYY-MM-DD 格式。`);
+      return [];
+    }
 
-  const inconsistentPeriod = rows.findIndex(
-    (row) =>
-      String(row["统计开始日期"] ?? "").trim() !== periodStart ||
-      String(row["统计结束日期"] ?? "").trim() !== periodEnd
-  );
-  if (inconsistentPeriod >= 0) errors.push(`第 ${inconsistentPeriod + 2} 行的统计周期与首行不一致。`);
+    const startDate = new Date(`${periodStart}T00:00:00Z`);
+    const endDate = new Date(`${periodEnd}T00:00:00Z`);
+    if (Number.isNaN(startDate.getTime())) errors.push(`第 ${rowNumber} 行的统计开始日期不是有效日期。`);
+    if (Number.isNaN(endDate.getTime())) errors.push(`第 ${rowNumber} 行的统计结束日期不是有效日期。`);
+    if (!Number.isNaN(startDate.getTime()) && !Number.isNaN(endDate.getTime()) && startDate > endDate) {
+      errors.push(`第 ${rowNumber} 行的统计开始日期不能晚于统计结束日期。`);
+    }
+    return Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())
+      ? []
+      : [{ periodStart, periodEnd, startDate, endDate }];
+  });
+
+  const periodStart = validPeriods.length
+    ? validPeriods.reduce((earliest, item) => item.startDate < earliest.startDate ? item : earliest).periodStart
+    : "";
+  const periodEnd = validPeriods.length
+    ? validPeriods.reduce((latest, item) => item.endDate > latest.endDate ? item : latest).periodEnd
+    : "";
 
   return { errors, periodStart, periodEnd };
 }
