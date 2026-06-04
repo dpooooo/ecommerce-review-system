@@ -20,6 +20,22 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     ? body.mapping.filter((item: { originalField?: string; standardField?: string }) => item.originalField && item.standardField)
     : [];
 
+  const previousBatches = await prisma.uploadBatch.findMany({
+    where: {
+      id: { not: batch.id },
+      shopId: batch.shopId,
+      periodStart: batch.periodStart,
+      periodEnd: batch.periodEnd,
+      files: { some: { reportType: file.reportType } }
+    },
+    select: { id: true }
+  });
+  if (previousBatches.length) {
+    await prisma.uploadBatch.deleteMany({
+      where: { id: { in: previousBatches.map((item) => item.id) } }
+    });
+  }
+
   const result = await importUploadedFile({
     prisma,
     batch,
@@ -51,5 +67,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   await prisma.uploadedFile.update({ where: { id: file.id }, data: { parseStatus: "imported" } });
   await prisma.uploadBatch.update({ where: { id: batch.id }, data: { status: "imported" } });
 
-  return NextResponse.json({ status: "imported", savedMappings: mapping.length, ...result });
+  return NextResponse.json({
+    status: "imported",
+    savedMappings: mapping.length,
+    replacedBatches: previousBatches.length,
+    ...result
+  });
 }
