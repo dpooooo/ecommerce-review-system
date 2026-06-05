@@ -99,6 +99,49 @@ const standardFieldsByType: Record<string, string[]> = {
   promotion_audience: ["planId", "unitId", "audienceId", "audienceName", "spend", "revenue", "orders", "roi", "conversionRate", "impressions", "clicks", "ctr", "cpc"]
 };
 
+const standardFieldMeta: Record<string, { label: string; description: string }> = {
+  traffic: { label: "访客数", description: "进入店铺、商品或广告带来的访问人数/UV。" },
+  gmv: { label: "GMV", description: "成交总金额，通常未扣除退款。" },
+  gsv: { label: "GSV", description: "实销金额，一般为 GMV 扣除退款后的金额。" },
+  orders: { label: "订单数", description: "成交订单数量。" },
+  conversionRate: { label: "转化率", description: "成交人数或订单数相对访客/点击的比例。" },
+  aov: { label: "客单价", description: "平均每笔订单金额。" },
+  refundAmount: { label: "退款金额", description: "统计周期内产生的退款金额。" },
+  refundRate: { label: "退款率", description: "退款金额或退款订单占成交的比例。" },
+  spend: { label: "推广花费", description: "广告、推广计划或人群消耗金额。" },
+  impressions: { label: "展现数", description: "广告或内容被展示的次数。" },
+  clicks: { label: "点击数", description: "广告或内容被点击的次数。" },
+  ctr: { label: "点击率", description: "点击数 / 展现数。" },
+  cpc: { label: "平均点击成本", description: "推广花费 / 点击数。" },
+  promoGmv: { label: "推广成交金额", description: "由推广带来的成交金额。" },
+  roi: { label: "ROI", description: "成交金额 / 推广花费。" },
+  productId: { label: "商品ID", description: "商品、SPU 或 SKU 的唯一编号。" },
+  productName: { label: "商品名称", description: "商品展示名称。" },
+  stock: { label: "库存", description: "当前商品库存数量。" },
+  searchImpressions: { label: "搜索曝光数", description: "商品在搜索场景中的曝光次数。" },
+  channel: { label: "流量渠道", description: "流量来源的大类，例如搜索、推荐、付费等。" },
+  source1: { label: "一级来源", description: "平台报表中的一级流量来源。" },
+  source2: { label: "二级来源", description: "平台报表中的二级流量来源。" },
+  source3: { label: "三级来源", description: "平台报表中的三级流量来源。" },
+  visitors: { label: "访客数", description: "该渠道或画像维度下的访问人数/UV。" },
+  buyers: { label: "买家数", description: "产生购买行为的人数。" },
+  revenue: { label: "成交金额", description: "计划、人群、渠道或画像维度贡献的成交金额。" },
+  uvValue: { label: "UV价值", description: "成交金额 / 访客数。" },
+  userType: { label: "用户类型", description: "新客、老客、成交用户等人群类型。" },
+  dimension: { label: "画像维度", description: "年龄、性别、地域、消费层级等画像分类。" },
+  dimensionValue: { label: "画像值", description: "某个画像维度下的具体取值。" },
+  planId: { label: "计划ID", description: "推广计划的唯一编号。" },
+  planName: { label: "计划名称", description: "推广计划名称。" },
+  unitId: { label: "单元ID", description: "推广单元的唯一编号。" },
+  audienceId: { label: "人群ID", description: "推广人群的唯一编号。" },
+  audienceName: { label: "人群名称", description: "推广人群名称。" }
+};
+
+function standardFieldLabel(field: string) {
+  const meta = standardFieldMeta[field];
+  return meta ? `${meta.label} · ${field}` : field;
+}
+
 function today(offsetDays = 0) {
   const date = new Date();
   date.setDate(date.getDate() + offsetDays);
@@ -432,15 +475,29 @@ export function UploadWorkflow() {
 
             {!isStandardTemplate ? (
               <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-                {mapping.map((item) => (
-                  <div key={item.originalField} className="rounded-md border border-slate-200 p-3">
-                    <div className="mb-2 text-sm font-medium text-slate-900">{item.originalField}</div>
-                    <select value={item.standardField} onChange={(event) => updateMapping(item.originalField, event.target.value)} className="h-9 w-full rounded-md border border-slate-200 px-2 text-sm">
-                      <option value="">不入库</option>
-                      {standardFields.map((field) => <option key={field} value={field}>{field}</option>)}
-                    </select>
-                  </div>
-                ))}
+                {mapping.map((item) => {
+                  const selectedMeta = standardFieldMeta[item.standardField];
+                  return (
+                    <div key={item.originalField} className="rounded-md border border-slate-200 p-3">
+                      <div className="mb-2 text-sm font-medium text-slate-900">{item.originalField}</div>
+                      <select value={item.standardField} onChange={(event) => updateMapping(item.originalField, event.target.value)} className="h-9 w-full rounded-md border border-slate-200 px-2 text-sm">
+                        <option value="">不入库</option>
+                        {standardFields.map((field) => <option key={field} value={field}>{standardFieldLabel(field)}</option>)}
+                      </select>
+                      <div className="mt-2 min-h-10 text-xs leading-5 text-slate-500">
+                        {selectedMeta ? (
+                          <>
+                            <span className="font-medium text-slate-700">{selectedMeta.label}</span>
+                            <span className="text-slate-400"> · {item.standardField}</span>
+                            <div>{selectedMeta.description}</div>
+                          </>
+                        ) : (
+                          <span>该字段不会写入标准指标表。</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             ) : null}
           </Card>
