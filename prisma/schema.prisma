@@ -50,6 +50,7 @@ model UploadBatch {
   shopId      String
   platform    String
   periodType  String
+  timeGrain   String   @default("period")
   periodStart DateTime
   periodEnd   DateTime
   compareType String?

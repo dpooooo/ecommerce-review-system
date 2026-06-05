@@ -27,6 +27,7 @@ type UploadResult = {
     id: string;
     status: string;
     periodType: string;
+    timeGrain: string;
     periodStart: string;
     periodEnd: string;
   };
@@ -45,6 +46,7 @@ type UploadResult = {
   detectedReportType?: string;
   standardTemplate?: {
     reportType: string;
+    timeGrain: string;
     name: string;
     directImport: boolean;
   } | null;
@@ -70,6 +72,22 @@ const periodTypes = [
   { value: "previous", label: "对比周期" },
   { value: "history", label: "历史数据" }
 ];
+
+const timeGrains = [
+  { value: "daily", label: "日数据", description: "每行填写一个数据日期，适合长期沉淀数据库。" },
+  { value: "monthly", label: "月数据", description: "每行填写一个统计月份，系统自动按月汇总。" },
+  { value: "period", label: "周期汇总", description: "每行填写开始和结束日期，适合活动或复盘周期。" }
+];
+
+const timeGrainsByReportType: Record<string, string[]> = {
+  shop: ["daily", "monthly", "period"],
+  product: ["daily", "monthly", "period"],
+  promotion: ["daily", "monthly", "period"],
+  promotion_plan: ["daily", "monthly", "period"],
+  promotion_audience: ["daily", "monthly", "period"],
+  traffic_source: ["monthly", "period"],
+  user_profile: ["monthly", "period"]
+};
 
 const standardFieldsByType: Record<string, string[]> = {
   shop: ["traffic", "gmv", "gsv", "orders", "conversionRate", "aov", "refundAmount", "refundRate"],
@@ -97,6 +115,7 @@ export function UploadWorkflow() {
   const [platform, setPlatform] = useState("TMALL");
   const [uploadMode, setUploadMode] = useState<"template" | "raw">("template");
   const [reportType, setReportType] = useState("shop");
+  const [timeGrain, setTimeGrain] = useState("daily");
   const [periodType, setPeriodType] = useState("current");
   const [periodStart, setPeriodStart] = useState(today(-30));
   const [periodEnd, setPeriodEnd] = useState(today());
@@ -108,6 +127,9 @@ export function UploadWorkflow() {
 
   const activeReportType = uploadResult?.detectedReportType || reportType;
   const activeReportLabel = reportTypes.find((item) => item.value === activeReportType)?.label || activeReportType;
+  const availableTimeGrains = timeGrainsByReportType[reportType] || ["period"];
+  const activeTimeGrain = uploadResult?.standardTemplate?.timeGrain || uploadResult?.batch.timeGrain || timeGrain;
+  const activeTimeGrainLabel = timeGrains.find((item) => item.value === activeTimeGrain)?.label || activeTimeGrain;
   const standardFields = useMemo(() => standardFieldsByType[activeReportType] || [], [activeReportType]);
   const isStandardTemplate = Boolean(uploadResult?.standardTemplate?.directImport);
 
@@ -124,6 +146,11 @@ export function UploadWorkflow() {
       })
       .catch(() => setShops([]));
   }, []);
+
+  useEffect(() => {
+    const grains = timeGrainsByReportType[reportType] || ["period"];
+    if (!grains.includes(timeGrain)) setTimeGrain(grains[0]);
+  }, [reportType, timeGrain]);
 
   function resetUpload(nextMode?: "template" | "raw") {
     if (nextMode) setUploadMode(nextMode);
@@ -158,6 +185,7 @@ export function UploadWorkflow() {
     form.set("platform", platform);
     form.set("reportType", uploadMode === "template" ? reportType : "auto");
     form.set("periodType", periodType);
+    form.set("timeGrain", uploadMode === "template" ? timeGrain : "period");
     form.set("periodStart", periodStart);
     form.set("periodEnd", periodEnd);
     form.set("file", file);
@@ -174,6 +202,7 @@ export function UploadWorkflow() {
     setUploadResult(data);
     setMapping(data.mapping || []);
     setReportType(data.detectedReportType || reportType);
+    setTimeGrain(data.standardTemplate?.timeGrain || data.batch.timeGrain || timeGrain);
     setPeriodStart(dateOnly(data.batch.periodStart));
     setPeriodEnd(dateOnly(data.batch.periodEnd));
     setStatus("uploaded");
@@ -245,7 +274,25 @@ export function UploadWorkflow() {
         <section className="space-y-3">
           <div>
             <h2 className="text-sm font-semibold text-slate-900">1. 选择并下载标准模板</h2>
-            <p className="mt-1 text-sm text-slate-500">模板中的“统计开始日期”和“统计结束日期”决定数据周期，不需要再准备“今期 / 同期”两套文件。</p>
+            <p className="mt-1 text-sm text-slate-500">先选择数据粒度。日数据填写“数据日期”，月数据填写“统计月份”，周期汇总填写开始和结束日期。</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {timeGrains
+              .filter((item) => availableTimeGrains.includes(item.value))
+              .map((item) => (
+                <button
+                  key={item.value}
+                  type="button"
+                  onClick={() => {
+                    setTimeGrain(item.value);
+                    resetUpload();
+                  }}
+                  className={`rounded-md border px-3 py-2 text-left text-sm ${timeGrain === item.value ? "border-brand-500 bg-brand-50 text-brand-700" : "border-slate-200 bg-white text-slate-600"}`}
+                  title={item.description}
+                >
+                  {item.label}
+                </button>
+              ))}
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {reportTypes.map((item) => (
@@ -265,7 +312,7 @@ export function UploadWorkflow() {
                   <div className="mt-1 text-xs text-slate-500">{item.description}</div>
                 </button>
                 <a
-                  href={`/api/upload-templates/${item.value}`}
+                  href={`/api/upload-templates/${item.value}?timeGrain=${(timeGrainsByReportType[item.value] || ["period"]).includes(timeGrain) ? timeGrain : (timeGrainsByReportType[item.value] || ["period"])[0]}`}
                   className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-brand-600"
                 >
                   <Download size={14} />
@@ -363,7 +410,7 @@ export function UploadWorkflow() {
               <div>
                 <h2 className="font-semibold text-slate-950">{isStandardTemplate ? "标准模板校验通过" : "字段映射确认"}</h2>
                 <p className="mt-1 text-sm text-slate-500">
-                  {uploadResult.file.originalName} · {uploadResult.file.rowCount} 行 · {activeReportLabel} · {dateOnly(uploadResult.batch.periodStart)} 至 {dateOnly(uploadResult.batch.periodEnd)}
+                  {uploadResult.file.originalName} · {uploadResult.file.rowCount} 行 · {activeReportLabel} · {activeTimeGrainLabel} · {dateOnly(uploadResult.batch.periodStart)} 至 {dateOnly(uploadResult.batch.periodEnd)}
                 </p>
                 {isStandardTemplate ? (
                   <p className="mt-2 text-sm text-emerald-700">字段、必填项和统计周期已校验，可直接写入数据库。</p>

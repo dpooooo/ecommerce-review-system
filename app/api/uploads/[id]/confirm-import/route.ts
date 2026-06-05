@@ -24,6 +24,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     where: {
       id: { not: batch.id },
       shopId: batch.shopId,
+      timeGrain: batch.timeGrain,
       periodStart: batch.periodStart,
       periodEnd: batch.periodEnd,
       files: { some: { reportType: file.reportType } }

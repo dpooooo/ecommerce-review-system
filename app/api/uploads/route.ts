@@ -8,6 +8,7 @@ import { detectReportTypeWithConfidence } from "@/lib/upload/reportType";
 import { guessFieldMapping } from "@/lib/analysis/standardize/fieldMapping";
 import {
   detectStandardTemplate,
+  isTimeGrain,
   standardTemplateMapping,
   validateStandardTemplateRows
 } from "@/lib/upload/standardTemplates";
@@ -59,6 +60,8 @@ export async function POST(request: Request) {
   const platform = String(form.get("platform") || "TMALL");
   const requestedReportType = String(form.get("reportType") || "auto");
   const periodType = String(form.get("periodType") || "current");
+  const requestedTimeGrain = String(form.get("timeGrain") || "period");
+  let timeGrain = isTimeGrain(requestedTimeGrain) ? requestedTimeGrain : "period";
   let periodStart = new Date(String(form.get("periodStart") || "2024-05-01"));
   let periodEnd = new Date(String(form.get("periodEnd") || "2024-05-31"));
   const standardTemplate = detectStandardTemplate(parsed.rawColumns);
@@ -75,6 +78,7 @@ export async function POST(request: Request) {
     );
   }
   if (standardValidation) {
+    timeGrain = standardValidation.timeGrain;
     periodStart = new Date(standardValidation.periodStart);
     periodEnd = new Date(standardValidation.periodEnd);
   }
@@ -98,6 +102,7 @@ export async function POST(request: Request) {
       shopId: shop.id,
       platform,
       periodType,
+      timeGrain,
       periodStart,
       periodEnd,
       status: parsed.error ? "failed" : "parsed"
@@ -121,7 +126,7 @@ export async function POST(request: Request) {
     }
   });
   const guessedMapping = standardTemplate
-    ? standardTemplateMapping(standardTemplate.reportType)
+    ? standardTemplateMapping(standardTemplate.reportType, standardTemplate.timeGrain)
     : guessFieldMapping(parsed.rawColumns);
   const savedMappings = await prisma.fieldMapping.findMany({
     where: {
@@ -150,6 +155,7 @@ export async function POST(request: Request) {
     standardTemplate: standardTemplate
       ? {
           reportType: standardTemplate.reportType,
+          timeGrain: standardTemplate.timeGrain,
           name: standardTemplate.name,
           directImport: true
         }

@@ -23,6 +23,18 @@ function asText(value: unknown, fallback = "") {
 }
 
 function metricDate(row: Record<string, unknown>, batch: { periodEnd: Date }) {
+  const dataDate = asText(row.date);
+  if (dataDate) {
+    const date = new Date(`${dataDate}T00:00:00Z`);
+    if (!Number.isNaN(date.getTime())) return date;
+  }
+
+  const month = asText(row.month);
+  if (/^\d{4}-\d{2}$/.test(month)) {
+    const [year, monthNumber] = month.split("-").map(Number);
+    return new Date(Date.UTC(year, monthNumber, 0));
+  }
+
   const periodEnd = asText(row.periodEnd);
   if (!periodEnd) return batch.periodEnd;
 
