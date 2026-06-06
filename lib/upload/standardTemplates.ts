@@ -91,28 +91,6 @@ const metricColumnsByReportType: Record<string, StandardTemplateDefinition["colu
     { field: "clicks", label: "点击数", example: 88 },
     { field: "ctr", label: "点击率", example: 0.0602 },
     { field: "cpc", label: "平均点击成本", example: 1.16 }
-  ],
-  traffic_source: [
-    { field: "channel", label: "流量渠道", required: true, example: "搜索流量" },
-    { field: "source1", label: "一级来源", example: "站内免费" },
-    { field: "source2", label: "二级来源", example: "搜索" },
-    { field: "source3", label: "三级来源", example: "自然搜索" },
-    { field: "visitors", label: "访客数", example: 12000 },
-    { field: "buyers", label: "买家数", example: 360 },
-    { field: "conversionRate", label: "转化率", example: 0.03 },
-    { field: "revenue", label: "成交金额", example: 180000 },
-    { field: "uvValue", label: "UV价值", example: 15 }
-  ],
-  user_profile: [
-    { field: "userType", label: "用户类型", required: true, example: "成交用户" },
-    { field: "dimension", label: "画像维度", required: true, example: "年龄" },
-    { field: "dimensionValue", label: "画像值", required: true, example: "25-34岁" },
-    { field: "visitors", label: "访客数", example: 3000 },
-    { field: "buyers", label: "买家数", example: 150 },
-    { field: "orders", label: "订单数", example: 180 },
-    { field: "gmv", label: "GMV", example: 90000 },
-    { field: "aov", label: "客单价", example: 500 },
-    { field: "conversionRate", label: "转化率", example: 0.05 }
   ]
 };
 
@@ -121,9 +99,7 @@ export const reportTimeGrains: Record<string, TimeGrain[]> = {
   product: ["daily", "monthly", "period"],
   promotion: ["daily", "monthly", "period"],
   promotion_plan: ["daily", "monthly", "period"],
-  promotion_audience: ["daily", "monthly", "period"],
-  traffic_source: ["monthly", "period"],
-  user_profile: ["monthly", "period"]
+  promotion_audience: ["daily", "monthly", "period"]
 };
 
 const reportNames: Record<string, string> = {
@@ -131,9 +107,7 @@ const reportNames: Record<string, string> = {
   product: "商品数据",
   promotion: "推广汇总数据",
   promotion_plan: "推广计划数据",
-  promotion_audience: "推广人群数据",
-  traffic_source: "流量来源数据",
-  user_profile: "用户画像数据"
+  promotion_audience: "推广人群数据"
 };
 
 export const standardTemplates: StandardTemplateDefinition[] = Object.entries(metricColumnsByReportType).flatMap(

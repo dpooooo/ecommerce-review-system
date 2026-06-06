@@ -1,7 +1,7 @@
 import { Prisma, PrismaClient } from "@prisma/client";
 import { hashPassword } from "../lib/auth/password";
 import { buildReportSchema } from "../lib/analysis/report/reportBuilder";
-import { currentShopMetrics, previousShopMetrics, productMetrics, promotionPlans, trafficSources, userProfiles } from "../lib/demo-data";
+import { currentShopMetrics, previousShopMetrics, productMetrics, promotionPlans } from "../lib/demo-data";
 
 const prisma = new PrismaClient();
 
@@ -103,37 +103,6 @@ async function main() {
       clicks: Math.round(120000 * item.ctr),
       conversionRate: item.orders / Math.max(1, Math.round(120000 * item.ctr)),
       ...item
-    }))
-  });
-
-  await prisma.trafficSourceMetric.createMany({
-    data: trafficSources.map((item) => ({
-      shopId: shop.id,
-      batchId: currentBatch.id,
-      date: new Date("2024-05-31"),
-      channel: item.channel,
-      visitors: item.visitors,
-      buyers: item.buyers,
-      conversionRate: item.conversionRate,
-      revenue: item.revenue,
-      uvValue: item.uvValue
-    }))
-  });
-
-  await prisma.userProfileMetric.createMany({
-    data: userProfiles.map((item) => ({
-      shopId: shop.id,
-      batchId: currentBatch.id,
-      date: new Date("2024-05-31"),
-      userType: item.userType,
-      dimension: item.dimension,
-      dimensionValue: item.dimensionValue,
-      visitors: item.visitors,
-      buyers: item.buyers,
-      orders: item.buyers,
-      gmv: item.gmv,
-      aov: item.aov,
-      conversionRate: item.conversionRate
     }))
   });
 

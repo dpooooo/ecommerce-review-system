@@ -108,12 +108,6 @@ export function ReportModule({ module, index }: { module: ReportModuleData; inde
         <SimpleTable rows={tableData} columns={[{ key: "name", label: "因素" }, { key: "contribution", label: "贡献", format: "money" }, { key: "direction", label: "方向" }]} />
       ) : null}
       {module.key === "product_analysis" ? <ProductAnalysis table={firstTable} /> : null}
-      {module.key === "traffic_source" ? (
-        <SimpleTable rows={tableData} columns={[{ key: "channel", label: "渠道" }, { key: "visitors", label: "访客数", format: "number" }, { key: "revenue", label: "成交金额", format: "money" }, { key: "conversionRate", label: "转化率", format: "percent" }, { key: "uvValue", label: "UV 价值", format: "money" }]} />
-      ) : null}
-      {module.key === "user_profile" ? (
-        <SimpleTable rows={tableData} columns={[{ key: "userType", label: "用户类型" }, { key: "dimensionValue", label: "维度值" }, { key: "visitors", label: "访客数", format: "number" }, { key: "gmv", label: "GMV", format: "money" }, { key: "aov", label: "客单价", format: "money" }]} />
-      ) : null}
       {module.key === "promotion_detail" ? (
         <SimpleTable rows={tableData} columns={[{ key: "planName", label: "计划" }, { key: "spend", label: "花费", format: "money" }, { key: "revenue", label: "成交", format: "money" }, { key: "roi", label: "ROI", format: "number" }, { key: "cpc", label: "CPC", format: "money" }]} />
       ) : null}

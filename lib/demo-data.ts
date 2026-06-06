@@ -59,17 +59,3 @@ export const promotionPlans = [
   { planId: "AD03", planName: "洁面低价转化", spend: 310000, revenue: 830000, orders: 920, roi: 2.68, cpc: 3.12, ctr: 0.031 },
   { planId: "AD04", planName: "会员人群召回", spend: 145000, revenue: 760000, orders: 310, roi: 5.24, cpc: 1.58, ctr: 0.061 }
 ];
-
-export const trafficSources = [
-  { channel: "搜索", visitors: 82000, buyers: 7100, revenue: 9820000, conversionRate: 0.0866, uvValue: 119.8 },
-  { channel: "推荐", visitors: 69000, buyers: 3300, revenue: 4860000, conversionRate: 0.0478, uvValue: 70.4 },
-  { channel: "直播", visitors: 52000, buyers: 5200, revenue: 7460000, conversionRate: 0.1, uvValue: 143.5 },
-  { channel: "广告", visitors: 38000, buyers: 2200, revenue: 3680000, conversionRate: 0.0579, uvValue: 96.8 }
-];
-
-export const userProfiles = [
-  { userType: "新客", dimension: "生命周期", dimensionValue: "新客", visitors: 146000, buyers: 9800, gmv: 13600000, aov: 1387, conversionRate: 0.067 },
-  { userType: "老客", dimension: "生命周期", dimensionValue: "老客", visitors: 74800, buyers: 6900, gmv: 11200000, aov: 1623, conversionRate: 0.092 },
-  { userType: "PLUS", dimension: "会员等级", dimensionValue: "PLUS", visitors: 28100, buyers: 3120, gmv: 6840000, aov: 2192, conversionRate: 0.111 },
-  { userType: "促销敏感", dimension: "价格偏好", dimensionValue: "高敏感", visitors: 56000, buyers: 4600, gmv: 5120000, aov: 1113, conversionRate: 0.082 }
-];

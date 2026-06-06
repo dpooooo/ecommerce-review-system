@@ -139,57 +139,6 @@ export async function importUploadedFile(params: {
     return { importedRows: rows.length, target: "PromotionMetric" };
   }
 
-  if (params.file.reportType === "traffic_source") {
-    await params.prisma.trafficSourceMetric.createMany({
-      data: rows.map((row) => {
-        const visitors = cleanNumber(row.visitors);
-        const buyers = cleanNumber(row.buyers);
-        const revenue = cleanNumber(row.revenue);
-        return {
-          shopId: params.batch.shopId,
-          batchId: params.batch.id,
-          date: metricDate(row, params.batch),
-          channel: asText(row.channel, "未命名渠道"),
-          source1: asText(row.source1) || null,
-          source2: asText(row.source2) || null,
-          source3: asText(row.source3) || null,
-          visitors,
-          buyers,
-          conversionRate: cleanNumber(row.conversionRate, true) || (visitors ? buyers / visitors : 0),
-          revenue,
-          uvValue: cleanNumber(row.uvValue) || (visitors ? revenue / visitors : 0)
-        };
-      })
-    });
-    return { importedRows: rows.length, target: "TrafficSourceMetric" };
-  }
-
-  if (params.file.reportType === "user_profile") {
-    await params.prisma.userProfileMetric.createMany({
-      data: rows.map((row) => {
-        const visitors = cleanNumber(row.visitors);
-        const buyers = cleanNumber(row.buyers);
-        const gmv = cleanNumber(row.gmv);
-        const orders = cleanNumber(row.orders) || buyers;
-        return {
-          shopId: params.batch.shopId,
-          batchId: params.batch.id,
-          date: metricDate(row, params.batch),
-          userType: asText(row.userType, "未分类用户"),
-          dimension: asText(row.dimension, "默认维度"),
-          dimensionValue: asText(row.dimensionValue, "未分类"),
-          visitors,
-          buyers,
-          orders,
-          gmv,
-          aov: cleanNumber(row.aov) || (orders ? gmv / orders : 0),
-          conversionRate: cleanNumber(row.conversionRate, true) || (visitors ? buyers / visitors : 0)
-        };
-      })
-    });
-    return { importedRows: rows.length, target: "UserProfileMetric" };
-  }
-
   if (params.file.reportType === "promotion_plan") {
     await params.prisma.promotionPlanMetric.createMany({
       data: rows.map((row) => {

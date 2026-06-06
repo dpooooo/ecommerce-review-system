@@ -135,8 +135,6 @@ export default async function SettingsPage() {
               <option value="shop">店铺数据</option>
               <option value="product">商品数据</option>
               <option value="promotion">推广数据</option>
-              <option value="traffic_source">流量来源</option>
-              <option value="user_profile">用户画像</option>
               <option value="promotion_plan">推广计划</option>
               <option value="promotion_audience">推广人群</option>
             </select>

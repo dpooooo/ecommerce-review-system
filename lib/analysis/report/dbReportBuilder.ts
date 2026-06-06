@@ -103,14 +103,12 @@ export async function buildReportFromDb(params: {
   const previousStart = toDate(params.previousStart, latestPreviousBatch?.periodStart || defaultPreviousStart);
   const previousEnd = toDate(params.previousEnd, latestPreviousBatch?.periodEnd || defaultPreviousEnd);
 
-  const [currentShopRows, previousShopRows, products, previousProducts, promotionPlans, trafficSources, userProfiles, currentPromotion, previousPromotion] = await Promise.all([
+  const [currentShopRows, previousShopRows, products, previousProducts, promotionPlans, currentPromotion, previousPromotion] = await Promise.all([
     prisma.shopMetric.findMany({ where: { shopId: shop.id, date: { gte: currentStart, lte: currentEnd } }, orderBy: { date: "asc" } }),
     prisma.shopMetric.findMany({ where: { shopId: shop.id, date: { gte: previousStart, lte: previousEnd } }, orderBy: { date: "asc" } }),
     prisma.productMetric.findMany({ where: { shopId: shop.id, date: { gte: currentStart, lte: currentEnd } } }),
     prisma.productMetric.findMany({ where: { shopId: shop.id, date: { gte: previousStart, lte: previousEnd } } }),
     prisma.promotionPlanMetric.findMany({ where: { shopId: shop.id, date: { gte: currentStart, lte: currentEnd } } }),
-    prisma.trafficSourceMetric.findMany({ where: { shopId: shop.id, date: { gte: currentStart, lte: currentEnd } } }),
-    prisma.userProfileMetric.findMany({ where: { shopId: shop.id, date: { gte: currentStart, lte: currentEnd } } }),
     promotionSummary(shop.id, currentStart, currentEnd),
     promotionSummary(shop.id, previousStart, previousEnd)
   ]);
@@ -155,28 +153,6 @@ export async function buildReportFromDb(params: {
       clicks: item.clicks,
       ctr: item.ctr,
       cpc: item.cpc
-    })),
-    trafficSources: trafficSources.map((item) => ({
-      channel: item.channel,
-      source1: item.source1 || "",
-      source2: item.source2 || "",
-      source3: item.source3 || "",
-      visitors: item.visitors,
-      buyers: item.buyers,
-      conversionRate: item.conversionRate,
-      revenue: item.revenue,
-      uvValue: item.uvValue
-    })),
-    userProfiles: userProfiles.map((item) => ({
-      userType: item.userType,
-      dimension: item.dimension,
-      dimensionValue: item.dimensionValue,
-      visitors: item.visitors,
-      buyers: item.buyers,
-      orders: item.orders,
-      gmv: item.gmv,
-      aov: item.aov,
-      conversionRate: item.conversionRate
     })),
     trendData: currentShopRows.map((item) => ({
       date: `${item.date.getMonth() + 1}-${String(item.date.getDate()).padStart(2, "0")}`,

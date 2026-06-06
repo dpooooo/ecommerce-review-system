@@ -63,39 +63,6 @@ export function ReportChart({
       };
     }
 
-    if (moduleKey === "traffic_source" && tableData.length) {
-      return {
-        color: ["#2563eb", "#10b981"],
-        tooltip: { trigger: "axis" },
-        legend: { top: 0, right: 0 },
-        grid: { left: 58, right: 58, top: 42, bottom: 34 },
-        xAxis: { type: "category", data: tableData.map((item) => label(item.channel)) },
-        yAxis: [
-          { type: "value", axisLabel: { formatter: (value: number) => `${(value / 10000).toFixed(0)}万` } },
-          { type: "value", axisLabel: { formatter: (value: number) => `${value}` } }
-        ],
-        series: [
-          { name: "成交金额", type: "bar", data: tableData.map((item) => number(item.revenue)), barMaxWidth: 28 },
-          { name: "UV价值", type: "line", yAxisIndex: 1, smooth: true, data: tableData.map((item) => number(item.uvValue)) }
-        ]
-      };
-    }
-
-    if (moduleKey === "user_profile" && tableData.length) {
-      return {
-        tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
-        grid: { left: 82, right: 24, top: 16, bottom: 28 },
-        xAxis: { type: "value", splitLine: { lineStyle: { color: "#eef2f7" } } },
-        yAxis: { type: "category", data: tableData.slice(0, 8).map((item) => label(item.dimensionValue)) },
-        series: [{
-          type: "bar",
-          barWidth: 18,
-          data: tableData.slice(0, 8).map((item) => number(item.gmv)),
-          itemStyle: { color: "#2563eb", borderRadius: [0, 4, 4, 0] }
-        }]
-      };
-    }
-
     if (moduleKey === "promotion_detail" && tableData.length) {
       return {
         color: ["#2563eb", "#f59e0b"],

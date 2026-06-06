@@ -4,8 +4,6 @@ const reportTypeSignals: Record<string, string[]> = {
   product: ["productId", "productName", "stock", "searchImpressions"],
   promotion_audience: ["audienceId", "audienceName", "unitId"],
   promotion_plan: ["planId", "planName", "spend", "revenue"],
-  traffic_source: ["channel", "source1", "source2", "source3", "visitors", "uvValue"],
-  user_profile: ["userType", "dimension", "dimensionValue"],
   promotion: ["spend", "impressions", "clicks", "ctr", "cpc", "promoGmv", "roi"],
   shop: ["traffic", "gmv", "gsv", "orders", "conversionRate", "aov", "refundAmount", "refundRate"]
 };

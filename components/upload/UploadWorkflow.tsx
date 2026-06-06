@@ -62,9 +62,7 @@ const reportTypes = [
   { value: "product", label: "商品数据", description: "SPU / SKU 商品表现" },
   { value: "promotion", label: "推广汇总数据", description: "店铺推广整体表现" },
   { value: "promotion_plan", label: "推广计划数据", description: "推广计划明细" },
-  { value: "promotion_audience", label: "推广人群数据", description: "推广人群明细" },
-  { value: "traffic_source", label: "流量来源数据", description: "渠道流量表现" },
-  { value: "user_profile", label: "用户画像数据", description: "用户画像维度表现" }
+  { value: "promotion_audience", label: "推广人群数据", description: "推广人群明细" }
 ];
 
 const periodTypes = [
@@ -84,17 +82,13 @@ const timeGrainsByReportType: Record<string, string[]> = {
   product: ["daily", "monthly", "period"],
   promotion: ["daily", "monthly", "period"],
   promotion_plan: ["daily", "monthly", "period"],
-  promotion_audience: ["daily", "monthly", "period"],
-  traffic_source: ["monthly", "period"],
-  user_profile: ["monthly", "period"]
+  promotion_audience: ["daily", "monthly", "period"]
 };
 
 const standardFieldsByType: Record<string, string[]> = {
   shop: ["traffic", "gmv", "gsv", "orders", "conversionRate", "aov", "refundAmount", "refundRate"],
   promotion: ["spend", "impressions", "clicks", "ctr", "cpc", "promoGmv", "orders", "traffic", "roi"],
   product: ["productId", "productName", "traffic", "gmv", "gsv", "orders", "conversionRate", "aov", "refundAmount", "refundRate", "stock", "searchImpressions"],
-  traffic_source: ["channel", "source1", "source2", "source3", "visitors", "buyers", "conversionRate", "revenue", "uvValue"],
-  user_profile: ["userType", "dimension", "dimensionValue", "visitors", "buyers", "orders", "gmv", "aov", "conversionRate"],
   promotion_plan: ["planId", "planName", "spend", "revenue", "orders", "roi", "conversionRate", "impressions", "clicks", "ctr", "cpc"],
   promotion_audience: ["planId", "unitId", "audienceId", "audienceName", "spend", "revenue", "orders", "roi", "conversionRate", "impressions", "clicks", "ctr", "cpc"]
 };
