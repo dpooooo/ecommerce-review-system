@@ -20,7 +20,7 @@ const grainLabels: Record<TimeGrain, string> = {
 };
 
 const timeColumns: Record<TimeGrain, StandardTemplateDefinition["columns"]> = {
-  daily: [{ field: "date", label: "数据日期", required: true, example: "2026-05-01" }],
+  daily: [{ field: "date", label: "时间", required: true, example: "2026-05-01" }],
   monthly: [{ field: "month", label: "统计月份", required: true, example: "2026-05" }],
   period: [
     { field: "periodStart", label: "统计开始日期", required: true, example: "2026-05-01" },
@@ -67,30 +67,50 @@ const metricColumnsByReportType: Record<string, StandardTemplateDefinition["colu
   promotion_plan: [
     { field: "planId", label: "计划ID", required: true, example: "4027044735" },
     { field: "planName", label: "推广计划", required: true, example: "店铺收割" },
-    { field: "spend", label: "花费", example: 4470.34 },
-    { field: "revenue", label: "总订单金额", example: 49672.2 },
-    { field: "orders", label: "总订单数", example: 25 },
-    { field: "roi", label: "ROI", example: 11.11 },
-    { field: "conversionRate", label: "转化率", example: 0.0234 },
     { field: "impressions", label: "展现数", example: 25489 },
     { field: "clicks", label: "点击数", example: 1069 },
     { field: "ctr", label: "点击率", example: 0.0419 },
-    { field: "cpc", label: "平均点击成本", example: 4.18 }
+    { field: "spend", label: "花费", required: true, example: 4470.34 },
+    { field: "cpm", label: "千次展现成本", example: 175.38 },
+    { field: "cpc", label: "平均点击成本", example: 4.18 },
+    { field: "directOrders", label: "直接订单行", example: 12 },
+    { field: "directRevenue", label: "直接订单金额", example: 22800.8 },
+    { field: "indirectOrders", label: "间接订单行", example: 13 },
+    { field: "indirectRevenue", label: "间接订单金额", example: 26871.4 },
+    { field: "orders", label: "总订单行", example: 25 },
+    { field: "revenue", label: "总订单金额", required: true, example: 49672.2 },
+    { field: "addCarts", label: "总加购数", example: 310 },
+    { field: "addCartRate", label: "加购率", example: 0.2899 },
+    { field: "conversionRate", label: "转化率", example: 0.0234 },
+    { field: "orderCost", label: "平均订单成本", example: 178.81 },
+    { field: "roi", label: "投产比", required: true, example: 11.11 },
+    { field: "newCustomerOrders", label: "下单新客数", example: 8 },
+    { field: "adVisitors", label: "广告访客数", example: 980 }
   ],
   promotion_audience: [
     { field: "planId", label: "计划ID", required: true, example: "4039970959" },
+    { field: "planName", label: "推广计划", example: "店铺收割" },
     { field: "unitId", label: "单元ID", required: true, example: "4040388508" },
+    { field: "unitName", label: "推广单元", example: "核心拉新单元" },
     { field: "audienceId", label: "人群ID", required: true, example: "4039656033" },
     { field: "audienceName", label: "人群名称", required: true, example: "广告再营销人群" },
-    { field: "spend", label: "花费", example: 102.1 },
-    { field: "revenue", label: "总订单金额", example: 0 },
-    { field: "orders", label: "总订单数", example: 0 },
-    { field: "roi", label: "ROI", example: 0 },
-    { field: "conversionRate", label: "转化率", example: 0 },
     { field: "impressions", label: "展现数", example: 1461 },
     { field: "clicks", label: "点击数", example: 88 },
     { field: "ctr", label: "点击率", example: 0.0602 },
-    { field: "cpc", label: "平均点击成本", example: 1.16 }
+    { field: "spend", label: "花费", required: true, example: 102.1 },
+    { field: "cpm", label: "千次展现成本", example: 69.88 },
+    { field: "cpc", label: "平均点击成本", example: 1.16 },
+    { field: "directOrders", label: "直接订单行", example: 0 },
+    { field: "directRevenue", label: "直接订单金额", example: 0 },
+    { field: "indirectOrders", label: "间接订单行", example: 0 },
+    { field: "indirectRevenue", label: "间接订单金额", example: 0 },
+    { field: "orders", label: "总订单行", example: 0 },
+    { field: "revenue", label: "总订单金额", required: true, example: 0 },
+    { field: "addCarts", label: "总加购数", example: 12 },
+    { field: "addCartRate", label: "加购率", example: 0.1364 },
+    { field: "conversionRate", label: "转化率", example: 0 },
+    { field: "orderCost", label: "平均订单成本", example: 0 },
+    { field: "roi", label: "投产比", required: true, example: 0 }
   ]
 };
 
@@ -192,7 +212,7 @@ export function validateStandardTemplateRows(
   const validPeriods = rows.flatMap((row, index) => {
     const rowNumber = index + 2;
     if (template.timeGrain === "daily") {
-      const value = String(row["数据日期"] ?? "").trim();
+      const value = String(row["时间"] ?? row["数据日期"] ?? "").trim();
       const date = parseDate(value);
       if (!date) {
         errors.push(`第 ${rowNumber} 行的数据日期必须使用 YYYY-MM-DD 格式。`);

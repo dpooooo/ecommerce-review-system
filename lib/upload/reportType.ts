@@ -2,8 +2,8 @@ import { guessFieldMapping } from "@/lib/analysis/standardize/fieldMapping";
 
 const reportTypeSignals: Record<string, string[]> = {
   product: ["productId", "productName", "stock", "searchImpressions"],
-  promotion_audience: ["audienceId", "audienceName", "unitId"],
-  promotion_plan: ["planId", "planName", "spend", "revenue"],
+  promotion_audience: ["audienceId", "audienceName", "unitId", "unitName", "directOrders", "indirectOrders"],
+  promotion_plan: ["planId", "planName", "spend", "revenue", "directOrders", "indirectOrders", "newCustomerOrders"],
   promotion: ["spend", "impressions", "clicks", "ctr", "cpc", "promoGmv", "roi"],
   shop: ["traffic", "gmv", "gsv", "orders", "conversionRate", "aov", "refundAmount", "refundRate"]
 };

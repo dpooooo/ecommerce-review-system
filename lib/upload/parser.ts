@@ -11,6 +11,10 @@ export type ParsedFile = {
   error?: string;
 };
 
+function hasValue(row: Record<string, unknown>) {
+  return Object.values(row).some((value) => String(value ?? "").trim() !== "");
+}
+
 export function parseBuffer(buffer: Buffer, fileName: string): ParsedFile {
   const ext = fileName.split(".").pop()?.toLowerCase() || "";
   try {
@@ -19,14 +23,15 @@ export function parseBuffer(buffer: Buffer, fileName: string): ParsedFile {
         header: true,
         skipEmptyLines: true
       });
-      const rawData = result.data;
-      const rawColumns = result.meta.fields || Object.keys(rawData[0] || {});
+      const rawColumns = result.meta.fields || Object.keys(result.data[0] || {});
+      const rawData = result.data.filter(hasValue);
       return { fileName, fileFormat: ext, rowCount: rawData.length, columnCount: rawColumns.length, rawColumns, rawData };
     }
     const workbook = XLSX.read(buffer, { type: "buffer" });
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    const rawData = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
-    const rawColumns = Object.keys(rawData[0] || {});
+    const allRows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
+    const rawColumns = Object.keys(allRows[0] || {});
+    const rawData = allRows.filter(hasValue);
     return { fileName, fileFormat: ext, rowCount: rawData.length, columnCount: rawColumns.length, rawColumns, rawData };
   } catch (error) {
     return {

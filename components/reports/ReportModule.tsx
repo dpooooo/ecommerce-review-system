@@ -92,6 +92,49 @@ function ProductAnalysis({ table }: { table: Record<string, unknown> }) {
   );
 }
 
+function PromotionDetail({ tables }: { tables: Array<Record<string, unknown>> }) {
+  const planRows = (tables[0]?.data || []) as Array<Record<string, unknown>>;
+  const audienceRows = (tables[1]?.data || []) as Array<Record<string, unknown>>;
+  return (
+    <div className="mt-4 space-y-5">
+      <div>
+        <div className="text-sm font-medium text-slate-700">推广计划表现</div>
+        <SimpleTable
+          rows={planRows}
+          columns={[
+            { key: "planName", label: "计划" },
+            { key: "spend", label: "花费", format: "money" },
+            { key: "revenue", label: "总订单金额", format: "money" },
+            { key: "roi", label: "投产比", format: "number" },
+            { key: "orders", label: "总订单行", format: "number" },
+            { key: "orderCost", label: "平均订单成本", format: "money" },
+            { key: "addCartRate", label: "加购率", format: "percent" },
+            { key: "newCustomerOrders", label: "下单新客数", format: "number" }
+          ]}
+        />
+      </div>
+      {audienceRows.length ? (
+        <div>
+          <div className="text-sm font-medium text-slate-700">推广人群表现</div>
+          <SimpleTable
+            rows={audienceRows}
+            columns={[
+              { key: "planName", label: "计划" },
+              { key: "unitName", label: "推广单元" },
+              { key: "audienceName", label: "人群" },
+              { key: "spend", label: "花费", format: "money" },
+              { key: "revenue", label: "总订单金额", format: "money" },
+              { key: "roi", label: "投产比", format: "number" },
+              { key: "orderCost", label: "平均订单成本", format: "money" },
+              { key: "conversionRate", label: "转化率", format: "percent" }
+            ]}
+          />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function ReportModule({ module, index }: { module: ReportModuleData; index: number }) {
   const firstTable = module.tables?.[0] || {};
   const tableData = (firstTable.data || []) as Array<Record<string, unknown>>;
@@ -108,9 +151,7 @@ export function ReportModule({ module, index }: { module: ReportModuleData; inde
         <SimpleTable rows={tableData} columns={[{ key: "name", label: "因素" }, { key: "contribution", label: "贡献", format: "money" }, { key: "direction", label: "方向" }]} />
       ) : null}
       {module.key === "product_analysis" ? <ProductAnalysis table={firstTable} /> : null}
-      {module.key === "promotion_detail" ? (
-        <SimpleTable rows={tableData} columns={[{ key: "planName", label: "计划" }, { key: "spend", label: "花费", format: "money" }, { key: "revenue", label: "成交", format: "money" }, { key: "roi", label: "ROI", format: "number" }, { key: "cpc", label: "CPC", format: "money" }]} />
-      ) : null}
+      {module.key === "promotion_detail" ? <PromotionDetail tables={module.tables || []} /> : null}
 
       {module.actions?.length ? (
         <div className="mt-4 flex flex-wrap gap-2">

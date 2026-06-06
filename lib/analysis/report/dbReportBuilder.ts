@@ -103,12 +103,13 @@ export async function buildReportFromDb(params: {
   const previousStart = toDate(params.previousStart, latestPreviousBatch?.periodStart || defaultPreviousStart);
   const previousEnd = toDate(params.previousEnd, latestPreviousBatch?.periodEnd || defaultPreviousEnd);
 
-  const [currentShopRows, previousShopRows, products, previousProducts, promotionPlans, currentPromotion, previousPromotion] = await Promise.all([
+  const [currentShopRows, previousShopRows, products, previousProducts, promotionPlans, promotionAudiences, currentPromotion, previousPromotion] = await Promise.all([
     prisma.shopMetric.findMany({ where: { shopId: shop.id, date: { gte: currentStart, lte: currentEnd } }, orderBy: { date: "asc" } }),
     prisma.shopMetric.findMany({ where: { shopId: shop.id, date: { gte: previousStart, lte: previousEnd } }, orderBy: { date: "asc" } }),
     prisma.productMetric.findMany({ where: { shopId: shop.id, date: { gte: currentStart, lte: currentEnd } } }),
     prisma.productMetric.findMany({ where: { shopId: shop.id, date: { gte: previousStart, lte: previousEnd } } }),
     prisma.promotionPlanMetric.findMany({ where: { shopId: shop.id, date: { gte: currentStart, lte: currentEnd } } }),
+    prisma.promotionAudienceMetric.findMany({ where: { shopId: shop.id, date: { gte: currentStart, lte: currentEnd } } }),
     promotionSummary(shop.id, currentStart, currentEnd),
     promotionSummary(shop.id, previousStart, previousEnd)
   ]);
@@ -151,8 +152,43 @@ export async function buildReportFromDb(params: {
       conversionRate: item.conversionRate,
       impressions: item.impressions,
       clicks: item.clicks,
+      cpm: item.cpm,
       ctr: item.ctr,
-      cpc: item.cpc
+      cpc: item.cpc,
+      directOrders: item.directOrders,
+      directRevenue: item.directRevenue,
+      indirectOrders: item.indirectOrders,
+      indirectRevenue: item.indirectRevenue,
+      addCarts: item.addCarts,
+      addCartRate: item.addCartRate,
+      orderCost: item.orderCost,
+      newCustomerOrders: item.newCustomerOrders,
+      adVisitors: item.adVisitors
+    })),
+    promotionAudiences: promotionAudiences.map((item) => ({
+      planId: item.planId,
+      planName: item.planName,
+      unitId: item.unitId,
+      unitName: item.unitName,
+      audienceId: item.audienceId,
+      audienceName: item.audienceName,
+      spend: item.spend,
+      revenue: item.revenue,
+      orders: item.orders,
+      roi: item.roi,
+      conversionRate: item.conversionRate,
+      impressions: item.impressions,
+      clicks: item.clicks,
+      cpm: item.cpm,
+      ctr: item.ctr,
+      cpc: item.cpc,
+      directOrders: item.directOrders,
+      directRevenue: item.directRevenue,
+      indirectOrders: item.indirectOrders,
+      indirectRevenue: item.indirectRevenue,
+      addCarts: item.addCarts,
+      addCartRate: item.addCartRate,
+      orderCost: item.orderCost
     })),
     trendData: currentShopRows.map((item) => ({
       date: `${item.date.getMonth() + 1}-${String(item.date.getDate()).padStart(2, "0")}`,

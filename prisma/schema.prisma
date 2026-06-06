@@ -220,7 +220,17 @@ model PromotionPlanMetric {
   impressions    Float    @default(0)
   clicks         Float    @default(0)
   ctr            Float    @default(0)
+  cpm            Float    @default(0)
   cpc            Float    @default(0)
+  directOrders   Float    @default(0)
+  directRevenue  Float    @default(0)
+  indirectOrders Float    @default(0)
+  indirectRevenue Float   @default(0)
+  addCarts       Float    @default(0)
+  addCartRate    Float    @default(0)
+  orderCost      Float    @default(0)
+  newCustomerOrders Float @default(0)
+  adVisitors     Float    @default(0)
   createdAt      DateTime @default(now())
 
   shop  Shop        @relation(fields: [shopId], references: [id], onDelete: Cascade)
@@ -233,7 +243,9 @@ model PromotionAudienceMetric {
   batchId        String
   date           DateTime
   planId         String
+  planName       String   @default("")
   unitId         String
+  unitName       String   @default("")
   audienceId     String
   audienceName   String
   spend          Float    @default(0)
@@ -244,7 +256,15 @@ model PromotionAudienceMetric {
   impressions    Float    @default(0)
   clicks         Float    @default(0)
   ctr            Float    @default(0)
+  cpm            Float    @default(0)
   cpc            Float    @default(0)
+  directOrders   Float    @default(0)
+  directRevenue  Float    @default(0)
+  indirectOrders Float    @default(0)
+  indirectRevenue Float   @default(0)
+  addCarts       Float    @default(0)
+  addCartRate    Float    @default(0)
+  orderCost      Float    @default(0)
   createdAt      DateTime @default(now())
 
   shop  Shop        @relation(fields: [shopId], references: [id], onDelete: Cascade)

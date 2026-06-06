@@ -89,11 +89,12 @@ const standardFieldsByType: Record<string, string[]> = {
   shop: ["traffic", "gmv", "gsv", "orders", "conversionRate", "aov", "refundAmount", "refundRate"],
   promotion: ["spend", "impressions", "clicks", "ctr", "cpc", "promoGmv", "orders", "traffic", "roi"],
   product: ["productId", "productName", "traffic", "gmv", "gsv", "orders", "conversionRate", "aov", "refundAmount", "refundRate", "stock", "searchImpressions"],
-  promotion_plan: ["planId", "planName", "spend", "revenue", "orders", "roi", "conversionRate", "impressions", "clicks", "ctr", "cpc"],
-  promotion_audience: ["planId", "unitId", "audienceId", "audienceName", "spend", "revenue", "orders", "roi", "conversionRate", "impressions", "clicks", "ctr", "cpc"]
+  promotion_plan: ["date", "planId", "planName", "impressions", "clicks", "ctr", "spend", "cpm", "cpc", "directOrders", "directRevenue", "indirectOrders", "indirectRevenue", "orders", "revenue", "addCarts", "addCartRate", "conversionRate", "orderCost", "roi", "newCustomerOrders", "adVisitors"],
+  promotion_audience: ["date", "planId", "planName", "unitId", "unitName", "audienceId", "audienceName", "impressions", "clicks", "ctr", "spend", "cpm", "cpc", "directOrders", "directRevenue", "indirectOrders", "indirectRevenue", "orders", "revenue", "addCarts", "addCartRate", "conversionRate", "orderCost", "roi"]
 };
 
 const standardFieldMeta: Record<string, { label: string; description: string }> = {
+  date: { label: "时间", description: "该行数据对应的统计日期。" },
   traffic: { label: "访客数", description: "进入店铺、商品或广告带来的访问人数/UV。" },
   gmv: { label: "GMV", description: "成交总金额，通常未扣除退款。" },
   gsv: { label: "GSV", description: "实销金额，一般为 GMV 扣除退款后的金额。" },
@@ -107,8 +108,18 @@ const standardFieldMeta: Record<string, { label: string; description: string }> 
   clicks: { label: "点击数", description: "广告或内容被点击的次数。" },
   ctr: { label: "点击率", description: "点击数 / 展现数。" },
   cpc: { label: "平均点击成本", description: "推广花费 / 点击数。" },
+  cpm: { label: "千次展现成本", description: "推广花费 / 展现数 * 1000。" },
   promoGmv: { label: "推广成交金额", description: "由推广带来的成交金额。" },
   roi: { label: "ROI", description: "成交金额 / 推广花费。" },
+  directOrders: { label: "直接订单行", description: "用户点击广告后直接产生的订单行数。" },
+  directRevenue: { label: "直接订单金额", description: "直接订单贡献的成交金额。" },
+  indirectOrders: { label: "间接订单行", description: "广告影响后间接产生的订单行数。" },
+  indirectRevenue: { label: "间接订单金额", description: "间接订单贡献的成交金额。" },
+  addCarts: { label: "总加购数", description: "广告带来的商品加购次数或人数。" },
+  addCartRate: { label: "加购率", description: "总加购数 / 点击数或访客数。" },
+  orderCost: { label: "平均订单成本", description: "推广花费 / 总订单行。" },
+  newCustomerOrders: { label: "下单新客数", description: "通过该计划下单的新客数量。" },
+  adVisitors: { label: "广告访客数", description: "推广带来的访客数。" },
   productId: { label: "商品ID", description: "商品、SPU 或 SKU 的唯一编号。" },
   productName: { label: "商品名称", description: "商品展示名称。" },
   stock: { label: "库存", description: "当前商品库存数量。" },
@@ -127,6 +138,7 @@ const standardFieldMeta: Record<string, { label: string; description: string }> 
   planId: { label: "计划ID", description: "推广计划的唯一编号。" },
   planName: { label: "计划名称", description: "推广计划名称。" },
   unitId: { label: "单元ID", description: "推广单元的唯一编号。" },
+  unitName: { label: "推广单元", description: "推广单元名称。" },
   audienceId: { label: "人群ID", description: "推广人群的唯一编号。" },
   audienceName: { label: "人群名称", description: "推广人群名称。" }
 };
