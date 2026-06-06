@@ -196,7 +196,13 @@ export function UploadWorkflow() {
   }, [reportType, timeGrain]);
 
   function resetUpload(nextMode?: "template" | "raw") {
-    if (nextMode) setUploadMode(nextMode);
+    if (nextMode) {
+      setUploadMode(nextMode);
+      setReportType((current) => {
+        if (nextMode === "raw") return "auto";
+        return current === "auto" ? "shop" : current;
+      });
+    }
     setFile(null);
     setUploadResult(null);
     setMapping([]);
@@ -226,7 +232,7 @@ export function UploadWorkflow() {
     const form = new FormData();
     form.set("shopId", shopId);
     form.set("platform", platform);
-    form.set("reportType", uploadMode === "template" ? reportType : "auto");
+    form.set("reportType", reportType);
     form.set("periodType", periodType);
     form.set("timeGrain", uploadMode === "template" ? timeGrain : "period");
     form.set("periodStart", periodStart);
@@ -252,7 +258,7 @@ export function UploadWorkflow() {
     setMessage(
       data.standardTemplate
         ? `已识别为“${data.standardTemplate.name}”，统计周期已自动读取，可直接确认入库。`
-        : `已识别为“${reportTypes.find((item) => item.value === data.detectedReportType)?.label || data.detectedReportType}”，请确认字段映射后入库。`
+        : `已确定数据类型为“${reportTypes.find((item) => item.value === data.detectedReportType)?.label || data.detectedReportType}”，请确认字段映射后入库。`
     );
   }
 
@@ -393,10 +399,9 @@ export function UploadWorkflow() {
             <span className="text-sm font-medium text-slate-700">数据类型</span>
             <div className="relative mt-1">
               <select
-                value={uploadMode === "template" ? reportType : "auto"}
+                value={reportType}
                 onChange={(event) => setReportType(event.target.value)}
-                disabled={uploadMode === "raw"}
-                className="h-10 w-full appearance-none rounded-md border border-slate-200 px-3 pr-8 text-sm disabled:bg-slate-50"
+                className="h-10 w-full appearance-none rounded-md border border-slate-200 px-3 pr-8 text-sm"
               >
                 {uploadMode === "raw" ? <option value="auto">自动识别</option> : null}
                 {reportTypes.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
