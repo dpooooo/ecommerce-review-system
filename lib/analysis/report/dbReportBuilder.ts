@@ -142,6 +142,20 @@ export async function buildReportFromDb(params: {
       stock: item.stock,
       searchImpressions: item.searchImpressions
     })),
+    previousProducts: previousProducts.map((item) => ({
+      productId: item.productId,
+      productName: item.productName,
+      traffic: item.traffic,
+      gmv: item.gmv,
+      gsv: item.gsv,
+      orders: item.orders,
+      conversionRate: item.conversionRate,
+      aov: item.aov,
+      refundAmount: item.refundAmount,
+      refundRate: item.refundRate,
+      stock: item.stock,
+      searchImpressions: item.searchImpressions
+    })),
     promotionPlans: promotionPlans.map((item) => ({
       planId: item.planId,
       planName: item.planName,

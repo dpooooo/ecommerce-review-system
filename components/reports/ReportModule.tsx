@@ -1,7 +1,7 @@
 import { AlertTriangle, BarChart3, Boxes, Megaphone, TrendingUp } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Card } from "@/components/common/Card";
-import { ProductQuadrantChart, TopProductChart } from "@/components/dashboard/ProductCharts";
+import { ProductInsightAnalysis } from "@/components/reports/ProductInsightAnalysis";
 import { ReportChart } from "@/components/reports/ReportChart";
 import { formatMoney, formatNumber, formatPercent } from "@/lib/format";
 
@@ -142,44 +142,6 @@ function AttributionTable({ rows }: { rows: Array<Record<string, unknown>> }) {
   );
 }
 
-function ProductAnalysis({ table }: { table: Record<string, unknown> }) {
-  const topProducts = (table.topProducts || []) as Array<Record<string, unknown>>;
-  const quadrants = (table.quadrants || []) as Array<Record<string, unknown>>;
-  const bestProduct = topProducts[0];
-  const highRefund = [...topProducts].sort((a, b) => asNumber(b.refundRate) - asNumber(a.refundRate))[0];
-
-  return (
-    <div className="mt-5 space-y-5">
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-        <MetricPill label="商品样本" value={`${formatNumber(topProducts.length)} 个`} />
-        <MetricPill label="GMV 最高商品" value={text(bestProduct?.productName || bestProduct?.productId)} tone="brand" />
-        <MetricPill label="退款率关注" value={highRefund ? `${text(highRefund.productName || highRefund.productId)} · ${formatPercent(asNumber(highRefund.refundRate))}` : "-"} tone="red" />
-      </div>
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <div className="rounded-md border border-slate-200 p-4">
-          <div className="text-sm font-semibold text-slate-900">GMV Top 商品</div>
-          <TopProductChart items={topProducts} />
-        </div>
-        <div className="rounded-md border border-slate-200 p-4">
-          <div className="text-sm font-semibold text-slate-900">商品结构象限</div>
-          <ProductQuadrantChart items={quadrants} />
-        </div>
-      </div>
-      <SimpleTable
-        rows={topProducts}
-        columns={[
-          { key: "productName", label: "商品" },
-          { key: "traffic", label: "访客数", format: "number", align: "right" },
-          { key: "gmv", label: "GMV", format: "money", align: "right" },
-          { key: "gsv", label: "GSV", format: "money", align: "right" },
-          { key: "refundRate", label: "退款率", format: "percent", align: "right" }
-        ]}
-        maxRows={8}
-      />
-    </div>
-  );
-}
-
 function PromotionDetail({ tables }: { tables: Array<Record<string, unknown>> }) {
   const planRows = (tables[0]?.data || []) as Array<Record<string, unknown>>;
   const audienceRows = (tables[1]?.data || []) as Array<Record<string, unknown>>;
@@ -275,7 +237,7 @@ export function ReportModule({ module, index }: { module: ReportModuleData; inde
           ]}
         />
       ) : null}
-      {module.key === "product_analysis" ? <ProductAnalysis table={firstTable} /> : null}
+      {module.key === "product_analysis" ? <ProductInsightAnalysis table={firstTable} /> : null}
       {module.key === "promotion_detail" ? <PromotionDetail tables={module.tables || []} /> : null}
     </Card>
   );
