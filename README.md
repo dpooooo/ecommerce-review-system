@@ -89,6 +89,12 @@ npm run build
 pm2 restart ecommerce-review-system
 ```
 
+日常更新：
+git pull origin main
+npm run build
+pm2 restart ecommerce-review-system --update-env
+
+
 ## 项目结构
 
 - `app`：页面和 API Route Handlers
