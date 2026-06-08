@@ -38,6 +38,11 @@ async function loadReport(id: string): Promise<ReportSchema> {
 export default async function ReportDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const report = await loadReport(id);
+  const moduleLinks = report.modules.map((module, index) => ({
+    href: `#section-${module.key}`,
+    label: module.title,
+    index: String(index + 1).padStart(2, "0")
+  }));
 
   return (
     <div className="space-y-6">
@@ -55,10 +60,26 @@ export default async function ReportDetailPage({ params }: { params: Promise<{ i
       <ReportInsightCharts report={report} />
 
       <div className="space-y-4">
-        <div>
-          <h2 className="text-lg font-semibold text-slate-950">专题诊断</h2>
-          <p className="mt-1 text-sm text-slate-500">按趋势、归因、商品和推广拆解本期表现，保留可追溯的明细证据。</p>
-        </div>
+        <Card className="p-5">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-950">专题诊断</h2>
+              <p className="mt-1 text-sm text-slate-500">按趋势、归因、商品和推广拆解本期表现，保留可追溯的明细证据。</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {moduleLinks.map((item) => (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  className="inline-flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-xs font-medium text-slate-600 hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700"
+                >
+                  <span className="text-slate-400">{item.index}</span>
+                  {item.label}
+                </a>
+              ))}
+            </div>
+          </div>
+        </Card>
         {report.modules.map((module, index) => (
           <ReportModule key={module.key} module={module} index={index + 1} />
         ))}
@@ -66,11 +87,21 @@ export default async function ReportDetailPage({ params }: { params: Promise<{ i
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         <Card className="p-5">
-          <h2 className="mb-4 font-semibold text-slate-950">异常中心</h2>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="font-semibold text-slate-950">异常中心</h2>
+            <span className="rounded-md bg-red-50 px-2 py-1 text-xs font-semibold text-red-600">
+              {report.anomalies.length} 项
+            </span>
+          </div>
           <AnomalyList items={report.anomalies} />
         </Card>
         <Card className="p-5">
-          <h2 className="mb-4 font-semibold text-slate-950">行动清单</h2>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="font-semibold text-slate-950">行动清单</h2>
+            <span className="rounded-md bg-brand-50 px-2 py-1 text-xs font-semibold text-brand-700">
+              {report.actionItems.length} 项
+            </span>
+          </div>
           <ActionList items={report.actionItems} />
         </Card>
       </div>

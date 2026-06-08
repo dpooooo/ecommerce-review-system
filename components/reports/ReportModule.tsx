@@ -1,3 +1,5 @@
+import { AlertTriangle, BarChart3, Boxes, Megaphone, TrendingUp } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { Card } from "@/components/common/Card";
 import { ProductQuadrantChart, TopProductChart } from "@/components/dashboard/ProductCharts";
 import { ReportChart } from "@/components/reports/ReportChart";
@@ -13,6 +15,21 @@ type ReportModuleData = {
   actions?: string[];
 };
 
+type TableColumn = {
+  key: string;
+  label: string;
+  format?: "money" | "number" | "percent";
+  align?: "left" | "right";
+};
+
+const moduleMeta: Record<string, { label: string; icon: LucideIcon; tone: string }> = {
+  trend: { label: "趋势", icon: TrendingUp, tone: "bg-brand-50 text-brand-700" },
+  gmv_attribution: { label: "归因", icon: BarChart3, tone: "bg-emerald-50 text-emerald-700" },
+  gsv_attribution: { label: "影响", icon: AlertTriangle, tone: "bg-amber-50 text-amber-700" },
+  product_analysis: { label: "商品", icon: Boxes, tone: "bg-sky-50 text-sky-700" },
+  promotion_detail: { label: "推广", icon: Megaphone, tone: "bg-violet-50 text-violet-700" }
+};
+
 function asNumber(value: unknown) {
   const number = Number(value || 0);
   return Number.isFinite(number) ? number : 0;
@@ -22,27 +39,90 @@ function text(value: unknown) {
   return String(value ?? "-");
 }
 
-function SimpleTable({ rows, columns }: { rows: Array<Record<string, unknown>>; columns: Array<{ key: string; label: string; format?: "money" | "number" | "percent" }> }) {
+function formatCell(value: unknown, format?: TableColumn["format"]) {
+  if (format === "money") return formatMoney(asNumber(value));
+  if (format === "number") return formatNumber(asNumber(value));
+  if (format === "percent") return formatPercent(asNumber(value));
+  return text(value);
+}
+
+function SimpleTable({
+  rows,
+  columns,
+  maxRows = 10
+}: {
+  rows: Array<Record<string, unknown>>;
+  columns: TableColumn[];
+  maxRows?: number;
+}) {
+  const visibleRows = rows.slice(0, maxRows);
+  if (!visibleRows.length) {
+    return (
+      <div className="mt-4 rounded-md border border-dashed border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
+        暂无可展示的明细数据。
+      </div>
+    );
+  }
+
   return (
     <div className="mt-4 overflow-hidden rounded-md border border-slate-200">
-      <table className="w-full text-left text-sm">
-        <thead className="bg-slate-50 text-slate-500">
-          <tr>
-            {columns.map((column) => <th key={column.key} className="px-3 py-2">{column.label}</th>)}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-200">
-          {rows.map((row, index) => (
-            <tr key={index}>
-              {columns.map((column) => {
-                const value = row[column.key];
-                const content = column.format === "money" ? formatMoney(asNumber(value)) : column.format === "number" ? formatNumber(asNumber(value)) : column.format === "percent" ? formatPercent(asNumber(value)) : text(value);
-                return <td key={column.key} className="px-3 py-2 text-slate-700">{content}</td>;
-              })}
+      <div className="overflow-x-auto">
+        <table className="min-w-full text-left text-sm">
+          <thead className="bg-slate-50 text-slate-500">
+            <tr>
+              {columns.map((column) => (
+                <th key={column.key} className={`whitespace-nowrap px-3 py-2 font-medium ${column.align === "right" ? "text-right" : ""}`}>
+                  {column.label}
+                </th>
+              ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="divide-y divide-slate-200 bg-white">
+            {visibleRows.map((row, index) => (
+              <tr key={index} className="hover:bg-slate-50/80">
+                {columns.map((column) => {
+                  const value = row[column.key];
+                  const numericValue = asNumber(value);
+                  const colored = column.key === "contribution" || column.key === "roi" || column.key === "refundRate";
+                  const colorClass = colored
+                    ? numericValue < 0
+                      ? "text-red-600"
+                      : "text-emerald-600"
+                    : "text-slate-700";
+                  return (
+                    <td key={column.key} className={`whitespace-nowrap px-3 py-2 ${column.align === "right" ? "text-right" : ""} ${colorClass}`}>
+                      {formatCell(value, column.format)}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {rows.length > maxRows ? (
+        <div className="border-t border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500">
+          已展示前 {maxRows} 条，共 {rows.length} 条。
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function MetricPill({
+  label,
+  value,
+  tone = "slate"
+}: {
+  label: string;
+  value: string;
+  tone?: "slate" | "brand" | "emerald" | "red";
+}) {
+  const toneClass = tone === "brand" ? "bg-brand-50 text-brand-700" : tone === "emerald" ? "bg-emerald-50 text-emerald-700" : tone === "red" ? "bg-red-50 text-red-700" : "bg-slate-50 text-slate-700";
+  return (
+    <div className={`rounded-md px-3 py-2 ${toneClass}`}>
+      <div className="text-xs opacity-80">{label}</div>
+      <div className="mt-1 text-sm font-semibold">{value}</div>
     </div>
   );
 }
@@ -53,9 +133,9 @@ function AttributionTable({ rows }: { rows: Array<Record<string, unknown>> }) {
       rows={rows}
       columns={[
         { key: "name", label: "因素" },
-        { key: "previous", label: "同期值", format: "number" },
-        { key: "current", label: "当前值", format: "number" },
-        { key: "contribution", label: "贡献金额", format: "money" },
+        { key: "previous", label: "对比期", format: "number", align: "right" },
+        { key: "current", label: "当前期", format: "number", align: "right" },
+        { key: "contribution", label: "贡献金额", format: "money", align: "right" },
         { key: "direction", label: "方向" }
       ]}
     />
@@ -65,29 +145,37 @@ function AttributionTable({ rows }: { rows: Array<Record<string, unknown>> }) {
 function ProductAnalysis({ table }: { table: Record<string, unknown> }) {
   const topProducts = (table.topProducts || []) as Array<Record<string, unknown>>;
   const quadrants = (table.quadrants || []) as Array<Record<string, unknown>>;
+  const bestProduct = topProducts[0];
+  const highRefund = [...topProducts].sort((a, b) => asNumber(b.refundRate) - asNumber(a.refundRate))[0];
+
   return (
-    <div className="mt-4 space-y-4">
+    <div className="mt-5 space-y-5">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+        <MetricPill label="商品样本" value={`${formatNumber(topProducts.length)} 个`} />
+        <MetricPill label="GMV 最高商品" value={text(bestProduct?.productName || bestProduct?.productId)} tone="brand" />
+        <MetricPill label="退款率关注" value={highRefund ? `${text(highRefund.productName || highRefund.productId)} · ${formatPercent(asNumber(highRefund.refundRate))}` : "-"} tone="red" />
+      </div>
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <div className="rounded-md border border-slate-200 p-3">
-          <div className="text-sm font-medium text-slate-700">GMV Top 商品</div>
+        <div className="rounded-md border border-slate-200 p-4">
+          <div className="text-sm font-semibold text-slate-900">GMV Top 商品</div>
           <TopProductChart items={topProducts} />
         </div>
-        <div className="rounded-md border border-slate-200 p-3">
-          <div className="text-sm font-medium text-slate-700">商品四象限结构</div>
+        <div className="rounded-md border border-slate-200 p-4">
+          <div className="text-sm font-semibold text-slate-900">商品结构象限</div>
           <ProductQuadrantChart items={quadrants} />
         </div>
       </div>
-      <div>
-        <SimpleTable
-          rows={topProducts.slice(0, 8)}
-          columns={[
-            { key: "productName", label: "商品" },
-            { key: "traffic", label: "访客数", format: "number" },
-            { key: "gmv", label: "GMV", format: "money" },
-            { key: "refundRate", label: "退款率", format: "percent" }
-          ]}
-        />
-      </div>
+      <SimpleTable
+        rows={topProducts}
+        columns={[
+          { key: "productName", label: "商品" },
+          { key: "traffic", label: "访客数", format: "number", align: "right" },
+          { key: "gmv", label: "GMV", format: "money", align: "right" },
+          { key: "gsv", label: "GSV", format: "money", align: "right" },
+          { key: "refundRate", label: "退款率", format: "percent", align: "right" }
+        ]}
+        maxRows={8}
+      />
     </div>
   );
 }
@@ -95,38 +183,48 @@ function ProductAnalysis({ table }: { table: Record<string, unknown> }) {
 function PromotionDetail({ tables }: { tables: Array<Record<string, unknown>> }) {
   const planRows = (tables[0]?.data || []) as Array<Record<string, unknown>>;
   const audienceRows = (tables[1]?.data || []) as Array<Record<string, unknown>>;
+  const spend = planRows.reduce((sum, row) => sum + asNumber(row.spend), 0);
+  const revenue = planRows.reduce((sum, row) => sum + asNumber(row.revenue), 0);
+  const roi = spend ? revenue / spend : 0;
+
   return (
-    <div className="mt-4 space-y-5">
+    <div className="mt-5 space-y-5">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+        <MetricPill label="推广计划" value={`${formatNumber(planRows.length)} 个`} />
+        <MetricPill label="推广花费" value={formatMoney(spend)} tone="brand" />
+        <MetricPill label="成交金额" value={formatMoney(revenue)} tone="emerald" />
+        <MetricPill label="整体 ROI" value={roi.toFixed(2)} tone={roi >= 1 ? "emerald" : "red"} />
+      </div>
       <div>
-        <div className="text-sm font-medium text-slate-700">推广计划表现</div>
+        <div className="text-sm font-semibold text-slate-900">推广计划表现</div>
         <SimpleTable
           rows={planRows}
           columns={[
             { key: "planName", label: "计划" },
-            { key: "spend", label: "花费", format: "money" },
-            { key: "revenue", label: "总订单金额", format: "money" },
-            { key: "roi", label: "投产比", format: "number" },
-            { key: "orders", label: "总订单行", format: "number" },
-            { key: "orderCost", label: "平均订单成本", format: "money" },
-            { key: "addCartRate", label: "加购率", format: "percent" },
-            { key: "newCustomerOrders", label: "下单新客数", format: "number" }
+            { key: "spend", label: "花费", format: "money", align: "right" },
+            { key: "revenue", label: "成交金额", format: "money", align: "right" },
+            { key: "roi", label: "ROI", format: "number", align: "right" },
+            { key: "orders", label: "订单", format: "number", align: "right" },
+            { key: "orderCost", label: "订单成本", format: "money", align: "right" },
+            { key: "addCartRate", label: "加购率", format: "percent", align: "right" },
+            { key: "newCustomerOrders", label: "新客订单", format: "number", align: "right" }
           ]}
         />
       </div>
       {audienceRows.length ? (
         <div>
-          <div className="text-sm font-medium text-slate-700">推广人群表现</div>
+          <div className="text-sm font-semibold text-slate-900">推广人群表现</div>
           <SimpleTable
             rows={audienceRows}
             columns={[
               { key: "planName", label: "计划" },
-              { key: "unitName", label: "推广单元" },
+              { key: "unitName", label: "单元" },
               { key: "audienceName", label: "人群" },
-              { key: "spend", label: "花费", format: "money" },
-              { key: "revenue", label: "总订单金额", format: "money" },
-              { key: "roi", label: "投产比", format: "number" },
-              { key: "orderCost", label: "平均订单成本", format: "money" },
-              { key: "conversionRate", label: "转化率", format: "percent" }
+              { key: "spend", label: "花费", format: "money", align: "right" },
+              { key: "revenue", label: "成交金额", format: "money", align: "right" },
+              { key: "roi", label: "ROI", format: "number", align: "right" },
+              { key: "orderCost", label: "订单成本", format: "money", align: "right" },
+              { key: "conversionRate", label: "转化率", format: "percent", align: "right" }
             ]}
           />
         </div>
@@ -139,25 +237,46 @@ export function ReportModule({ module, index }: { module: ReportModuleData; inde
   const firstTable = module.tables?.[0] || {};
   const tableData = (firstTable.data || []) as Array<Record<string, unknown>>;
   const chartData = (module.charts?.[0]?.data || []) as Array<Record<string, unknown>>;
+  const meta = moduleMeta[module.key] || { label: "专题", icon: BarChart3, tone: "bg-slate-50 text-slate-700" };
+  const Icon = meta.icon;
 
   return (
-    <Card className="p-5">
-      <h2 className="font-semibold">{index}. {module.title}</h2>
-      <p className="mt-2 text-sm text-slate-600">{module.summary}</p>
+    <Card id={`section-${module.key}`} className="scroll-mt-24 p-5">
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="rounded-md bg-slate-900 px-2 py-1 text-xs font-semibold text-white">{String(index).padStart(2, "0")}</span>
+            <span className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold ${meta.tone}`}>
+              <Icon size={14} />
+              {meta.label}
+            </span>
+          </div>
+          <h2 className="mt-3 text-lg font-semibold text-slate-950">{module.title}</h2>
+          <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-600">{module.summary}</p>
+        </div>
+        {module.actions?.length ? (
+          <div className="flex max-w-md flex-wrap gap-2">
+            {module.actions.slice(0, 3).map((action) => (
+              <span key={action} className="rounded-md bg-slate-100 px-2 py-1 text-xs text-slate-600">{action}</span>
+            ))}
+          </div>
+        ) : null}
+      </div>
 
       <ReportChart moduleKey={module.key} chartData={chartData} tableData={tableData} />
       {module.key === "gmv_attribution" ? <AttributionTable rows={tableData} /> : null}
       {module.key === "gsv_attribution" ? (
-        <SimpleTable rows={tableData} columns={[{ key: "name", label: "因素" }, { key: "contribution", label: "贡献", format: "money" }, { key: "direction", label: "方向" }]} />
+        <SimpleTable
+          rows={tableData}
+          columns={[
+            { key: "name", label: "因素" },
+            { key: "contribution", label: "贡献", format: "money", align: "right" },
+            { key: "direction", label: "方向" }
+          ]}
+        />
       ) : null}
       {module.key === "product_analysis" ? <ProductAnalysis table={firstTable} /> : null}
       {module.key === "promotion_detail" ? <PromotionDetail tables={module.tables || []} /> : null}
-
-      {module.actions?.length ? (
-        <div className="mt-4 flex flex-wrap gap-2">
-          {module.actions.map((action) => <span key={action} className="rounded bg-slate-100 px-2 py-1 text-xs text-slate-600">{action}</span>)}
-        </div>
-      ) : null}
     </Card>
   );
 }
