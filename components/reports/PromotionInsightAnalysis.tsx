@@ -1,5 +1,7 @@
-import { AlertTriangle, ArrowRight, BadgeDollarSign, MousePointerClick, Target, Users } from "lucide-react";
+import { AlertTriangle, ArrowRight, BadgeDollarSign, Target, Users } from "lucide-react";
 import { formatMoney, formatNumber, formatPercent } from "@/lib/format";
+
+type Row = Record<string, unknown>;
 
 function asNumber(value: unknown) {
   const number = Number(value || 0);
@@ -14,15 +16,67 @@ function safeRate(numerator: number, denominator: number) {
   return denominator ? numerator / denominator : 0;
 }
 
-function sum(rows: Array<Record<string, unknown>>, key: string) {
+function sum(rows: Row[], key: string) {
   return rows.reduce((total, row) => total + asNumber(row[key]), 0);
 }
 
-function planName(row: Record<string, unknown>) {
+function revenueFromBreakdown(row: Row) {
+  return asNumber(row.directRevenue) + asNumber(row.indirectRevenue);
+}
+
+function revenueFromRoi(row: Row) {
+  const spend = asNumber(row.spend);
+  const roi = asNumber(row.roi);
+  return spend > 0 && roi > 0 ? spend * roi : 0;
+}
+
+function looksLikeOrderCount(value: number, row: Row) {
+  const orders = asNumber(row.orders);
+  return orders > 0 && Math.abs(value - orders) < 0.0001;
+}
+
+function normalizedRevenue(row: Row) {
+  const rawRevenue = asNumber(row.revenue);
+  const breakdownRevenue = revenueFromBreakdown(row);
+  const impliedRevenue = revenueFromRoi(row);
+
+  if (breakdownRevenue > 0 && (rawRevenue <= 0 || looksLikeOrderCount(rawRevenue, row) || rawRevenue < breakdownRevenue * 0.2)) {
+    return breakdownRevenue;
+  }
+
+  if (impliedRevenue > 0 && (rawRevenue <= 0 || looksLikeOrderCount(rawRevenue, row) || rawRevenue < impliedRevenue * 0.2)) {
+    return impliedRevenue;
+  }
+
+  return rawRevenue;
+}
+
+function normalizedRoi(row: Row) {
+  const spend = asNumber(row.spend);
+  const roi = asNumber(row.roi);
+  return roi || safeRate(normalizedRevenue(row), spend);
+}
+
+function normalizedOrderCost(row: Row) {
+  return asNumber(row.orderCost) || safeRate(asNumber(row.spend), asNumber(row.orders));
+}
+
+function sumNormalizedRevenue(rows: Row[]) {
+  return rows.reduce((total, row) => total + normalizedRevenue(row), 0);
+}
+
+function suspiciousRevenueRows(rows: Row[]) {
+  return rows.filter((row) => {
+    const rawRevenue = asNumber(row.revenue);
+    return rawRevenue > 0 && looksLikeOrderCount(rawRevenue, row) && (revenueFromBreakdown(row) > 0 || revenueFromRoi(row) > 0);
+  });
+}
+
+function planName(row: Row) {
   return text(row.planName || row.planId || "未命名计划");
 }
 
-function audienceName(row: Record<string, unknown>) {
+function audienceName(row: Row) {
   return text(row.audienceName || row.unitName || row.planName || "未命名人群");
 }
 
@@ -80,7 +134,7 @@ function PromotionFunnel({ totals }: { totals: Record<string, number> }) {
   );
 }
 
-function ProblemList({ problems }: { problems: Array<Record<string, unknown>> }) {
+function ProblemList({ problems }: { problems: Row[] }) {
   if (!problems.length) {
     return (
       <div className="rounded-md border border-emerald-100 bg-emerald-50 p-4 text-sm text-emerald-700">
@@ -117,12 +171,12 @@ function ProblemList({ problems }: { problems: Array<Record<string, unknown>> })
   );
 }
 
-function ActionSuggestions({ actions }: { actions: Array<Record<string, unknown>> }) {
+function ActionSuggestions({ actions }: { actions: Row[] }) {
   return (
     <div className="rounded-md border border-slate-200 bg-white p-5">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-lg font-semibold text-slate-950">推广行动建议</h3>
-        <span className="text-sm font-semibold text-slate-500">目标 + 预估影响</span>
+        <span className="text-sm font-semibold text-slate-500">目标 + 预计影响</span>
       </div>
       <div className="space-y-4">
         {actions.map((item, index) => (
@@ -147,7 +201,10 @@ function ActionSuggestions({ actions }: { actions: Array<Record<string, unknown>
   );
 }
 
-function PlanCard({ row, badge }: { row: Record<string, unknown>; badge: string }) {
+function PlanCard({ row, badge }: { row: Row; badge: string }) {
+  const revenue = normalizedRevenue(row);
+  const roi = normalizedRoi(row);
+  const orderCost = normalizedOrderCost(row);
   return (
     <div className="rounded-md border border-slate-200 bg-slate-50 p-4">
       <div className="flex items-start justify-between gap-3">
@@ -156,20 +213,22 @@ function PlanCard({ row, badge }: { row: Record<string, unknown>; badge: string 
           <div>
             <h4 className="font-semibold text-slate-950">{planName(row)}</h4>
             <p className="mt-2 text-sm text-slate-600">
-              成交 {formatNumber(asNumber(row.orders))} | ROI {asNumber(row.roi).toFixed(2)} | 花费 {formatMoney(asNumber(row.spend))}
+              订单 {formatNumber(asNumber(row.orders))} | ROI {roi.toFixed(2)} | 花费 {formatMoney(asNumber(row.spend))}
             </p>
             <p className="mt-1 text-sm text-slate-500">
-              转化率 {formatPercent(asNumber(row.conversionRate))} | 订单成本 {formatMoney(asNumber(row.orderCost))}
+              转化率 {formatPercent(asNumber(row.conversionRate))} | 订单成本 {formatMoney(orderCost)}
             </p>
           </div>
         </div>
-        <div className="font-semibold text-emerald-600">{formatMoney(asNumber(row.revenue))}</div>
+        <div className="font-semibold text-emerald-600">{formatMoney(revenue)}</div>
       </div>
     </div>
   );
 }
 
-function AudienceCard({ row, badge }: { row: Record<string, unknown>; badge: string }) {
+function AudienceCard({ row, badge }: { row: Row; badge: string }) {
+  const revenue = normalizedRevenue(row);
+  const roi = normalizedRoi(row);
   return (
     <div className="rounded-md border border-slate-200 bg-slate-50 p-4">
       <div className="flex items-start justify-between gap-3">
@@ -178,21 +237,21 @@ function AudienceCard({ row, badge }: { row: Record<string, unknown>; badge: str
           <div>
             <h4 className="font-semibold text-slate-950">{audienceName(row)}</h4>
             <p className="mt-2 text-sm text-slate-600">
-              成交 {formatNumber(asNumber(row.orders))} | ROI {asNumber(row.roi).toFixed(2)} | 花费 {formatMoney(asNumber(row.spend))}
+              订单 {formatNumber(asNumber(row.orders))} | ROI {roi.toFixed(2)} | 花费 {formatMoney(asNumber(row.spend))}
             </p>
             <p className="mt-1 text-sm text-slate-500">{planName(row)}</p>
           </div>
         </div>
-        <div className="font-semibold text-emerald-600">{formatMoney(asNumber(row.revenue))}</div>
+        <div className="font-semibold text-emerald-600">{formatMoney(revenue)}</div>
       </div>
     </div>
   );
 }
 
-function PlanAnalysis({ rows }: { rows: Array<Record<string, unknown>> }) {
-  const topPlans = [...rows].sort((a, b) => asNumber(b.revenue) - asNumber(a.revenue)).slice(0, 5);
+function PlanAnalysis({ rows }: { rows: Row[] }) {
+  const topPlans = [...rows].sort((a, b) => normalizedRevenue(b) - normalizedRevenue(a)).slice(0, 5);
   const lowPlans = [...rows]
-    .filter((row) => asNumber(row.spend) > 0 && (asNumber(row.roi) < 1 || asNumber(row.orders) <= 0))
+    .filter((row) => asNumber(row.spend) > 0 && (normalizedRoi(row) < 1 || asNumber(row.orders) <= 0))
     .sort((a, b) => asNumber(b.spend) - asNumber(a.spend))
     .slice(0, 5);
   return (
@@ -224,10 +283,10 @@ function PlanAnalysis({ rows }: { rows: Array<Record<string, unknown>> }) {
   );
 }
 
-function AudienceAnalysis({ rows }: { rows: Array<Record<string, unknown>> }) {
-  const highValue = [...rows].filter((row) => asNumber(row.revenue) > 0).sort((a, b) => asNumber(b.revenue) - asNumber(a.revenue)).slice(0, 5);
+function AudienceAnalysis({ rows }: { rows: Row[] }) {
+  const highValue = [...rows].filter((row) => normalizedRevenue(row) > 0).sort((a, b) => normalizedRevenue(b) - normalizedRevenue(a)).slice(0, 5);
   const waste = [...rows]
-    .filter((row) => asNumber(row.spend) > 0 && (asNumber(row.revenue) <= 0 || asNumber(row.roi) < 1))
+    .filter((row) => asNumber(row.spend) > 0 && (normalizedRevenue(row) <= 0 || normalizedRoi(row) < 1))
     .sort((a, b) => asNumber(b.spend) - asNumber(a.spend))
     .slice(0, 5);
   return (
@@ -257,7 +316,7 @@ function AudienceAnalysis({ rows }: { rows: Array<Record<string, unknown>> }) {
   );
 }
 
-function PlanTable({ rows }: { rows: Array<Record<string, unknown>> }) {
+function PlanTable({ rows }: { rows: Row[] }) {
   return (
     <div className="rounded-md border border-slate-200 bg-white p-5">
       <div className="mb-4 flex items-center justify-between">
@@ -278,12 +337,12 @@ function PlanTable({ rows }: { rows: Array<Record<string, unknown>> }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
-            {[...rows].sort((a, b) => asNumber(b.revenue) - asNumber(a.revenue)).slice(0, 12).map((row, index) => (
+            {[...rows].sort((a, b) => normalizedRevenue(b) - normalizedRevenue(a)).slice(0, 12).map((row, index) => (
               <tr key={`${planName(row)}-table-${index}`} className="hover:bg-slate-50">
                 <td className="min-w-44 px-3 py-2 font-medium text-slate-900">{planName(row)}</td>
                 <td className="px-3 py-2 text-right">{formatMoney(asNumber(row.spend))}</td>
-                <td className="px-3 py-2 text-right">{formatMoney(asNumber(row.revenue))}</td>
-                <td className="px-3 py-2 text-right">{asNumber(row.roi).toFixed(2)}</td>
+                <td className="px-3 py-2 text-right">{formatMoney(normalizedRevenue(row))}</td>
+                <td className="px-3 py-2 text-right">{normalizedRoi(row).toFixed(2)}</td>
                 <td className="px-3 py-2 text-right">{formatNumber(asNumber(row.orders))}</td>
                 <td className="px-3 py-2 text-right">{formatPercent(asNumber(row.ctr))}</td>
                 <td className="px-3 py-2 text-right">{formatMoney(asNumber(row.cpc))}</td>
@@ -296,12 +355,13 @@ function PlanTable({ rows }: { rows: Array<Record<string, unknown>> }) {
   );
 }
 
-export function PromotionInsightAnalysis({ tables }: { tables: Array<Record<string, unknown>> }) {
-  const planRows = (tables[0]?.data || []) as Array<Record<string, unknown>>;
-  const audienceRows = (tables[1]?.data || []) as Array<Record<string, unknown>>;
+export function PromotionInsightAnalysis({ tables }: { tables: Row[] }) {
+  const planRows = (tables[0]?.data || []) as Row[];
+  const audienceRows = (tables[1]?.data || []) as Row[];
+  const suspiciousRows = suspiciousRevenueRows(planRows);
   const totals = {
     spend: sum(planRows, "spend"),
-    revenue: sum(planRows, "revenue"),
+    revenue: sumNormalizedRevenue(planRows),
     orders: sum(planRows, "orders"),
     impressions: sum(planRows, "impressions"),
     clicks: sum(planRows, "clicks"),
@@ -310,8 +370,8 @@ export function PromotionInsightAnalysis({ tables }: { tables: Array<Record<stri
   const roi = safeRate(totals.revenue, totals.spend);
   const ctr = safeRate(totals.clicks, totals.impressions);
   const cpc = safeRate(totals.spend, totals.clicks);
-  const lowRoiPlans = planRows.filter((row) => asNumber(row.spend) > 0 && asNumber(row.roi) < 1);
-  const wasteAudiences = audienceRows.filter((row) => asNumber(row.spend) > 0 && (asNumber(row.revenue) <= 0 || asNumber(row.roi) < 1));
+  const lowRoiPlans = planRows.filter((row) => asNumber(row.spend) > 0 && normalizedRoi(row) < 1);
+  const wasteAudiences = audienceRows.filter((row) => asNumber(row.spend) > 0 && (normalizedRevenue(row) <= 0 || normalizedRoi(row) < 1));
   const problems = [
     ...(roi < 1 ? [{ title: "ROI偏低", impact: totals.spend, reason: "推广花费带回的成交不足，投放边际效率偏弱。", action: "优先压缩低ROI计划和低效人群预算，把预算迁移到高转化商品、收割计划和有效关键词。" }] : []),
     ...(ctr < 0.02 && totals.impressions > 0 ? [{ title: "点击率偏低", impact: totals.clicks, reason: "素材、标题或人群匹配吸引力不足，曝光没有有效转成点击。", action: "更新素材卖点，拆分人群测试，优先修复点击链路。" }] : []),
@@ -320,8 +380,8 @@ export function PromotionInsightAnalysis({ tables }: { tables: Array<Record<stri
   ];
   const actions = [
     { title: "先停投/降权低效人群", impact: `可回收 ${formatMoney(sum(wasteAudiences, "spend"))}`, action: "对高花费零成交或低ROI人群先降权，避免无效点击继续消耗预算。", target: "人群花费下降50%，或ROI回到1以上" },
-    { title: "先压缩低效计划", impact: `可迁移 ${formatMoney(sum(lowRoiPlans, "spend"))}`, action: "下调低ROI计划预算，把花费转向高成交或高ROI计划。", target: "低效计划ROI提升至2以上，或预算压降30%" },
-    { title: "继续加码高价值人群", impact: "提升成交贡献", action: "把更多预算分配给已验证有效的人群包，优先用于收割和高意向再营销。", target: "高价值人群成交提升10%" }
+    { title: "先压缩低效计划", impact: `可迁移 ${formatMoney(sum(lowRoiPlans, "spend"))}`, action: "下调低ROI计划预算，把花费转向高成交或高ROI计划。", target: "低效计划ROI提升至1以上，或预算压降30%" },
+    { title: "继续加码高价值人群", impact: "提升成交贡献", action: "把更多预算分配给已经验证有效的人群包，优先用于收割和高意向再营销。", target: "高价值人群成交提升10%" }
   ];
 
   if (!planRows.length && !audienceRows.length) {
@@ -347,6 +407,12 @@ export function PromotionInsightAnalysis({ tables }: { tables: Array<Record<stri
           {roi < 1 ? "建议优先压缩低ROI预算，再检查点击成本和商品承接效率。" : "可继续围绕高ROI计划和高价值人群做结构性加码。"}
         </div>
       </div>
+
+      {suspiciousRows.length ? (
+        <div className="rounded-md border border-amber-200 bg-amber-50 p-4 text-sm font-semibold leading-6 text-amber-700">
+          检测到 {formatNumber(suspiciousRows.length)} 条推广计划的“成交金额”疑似被映射成订单数。页面已优先使用直接/间接成交金额或 ROI×花费进行展示，建议回到上传映射中检查 revenue / 总订单金额字段。
+        </div>
+      ) : null}
 
       <div className="rounded-md border border-slate-200 bg-slate-50 p-4">
         <div className="flex gap-3">
