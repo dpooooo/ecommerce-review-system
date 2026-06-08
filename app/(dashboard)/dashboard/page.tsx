@@ -8,9 +8,54 @@ import { buildReportFromDb } from "@/lib/analysis/report/dbReportBuilder";
 import { getSessionUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 
-export default async function DashboardPage() {
+function validDate(value?: string) {
+  if (!value) return undefined;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? undefined : value;
+}
+
+function previousRange(start?: string, end?: string) {
+  const currentStart = validDate(start);
+  const currentEnd = validDate(end);
+  if (!currentStart || !currentEnd) return {};
+
+  const startDate = new Date(currentStart);
+  const endDate = new Date(currentEnd);
+  if (startDate > endDate) return {};
+
+  const dayMs = 24 * 60 * 60 * 1000;
+  const days = Math.max(1, Math.round((endDate.getTime() - startDate.getTime()) / dayMs) + 1);
+  const previousEnd = new Date(startDate);
+  previousEnd.setDate(previousEnd.getDate() - 1);
+  const previousStart = new Date(previousEnd);
+  previousStart.setDate(previousStart.getDate() - days + 1);
+
+  return {
+    previousStart: previousStart.toISOString().slice(0, 10),
+    previousEnd: previousEnd.toISOString().slice(0, 10)
+  };
+}
+
+export default async function DashboardPage({
+  searchParams
+}: {
+  searchParams: Promise<{ shopId?: string; start?: string; end?: string; compareStart?: string; compareEnd?: string }>;
+}) {
   const user = await getSessionUser();
-  const report = user ? await buildReportFromDb({ userId: user.id }) : buildReportSchema();
+  const params = await searchParams;
+  const currentStart = validDate(params.start);
+  const currentEnd = validDate(params.end);
+  const inferredPrevious = previousRange(currentStart, currentEnd);
+  const report = user
+    ? await buildReportFromDb({
+        userId: user.id,
+        shopId: params.shopId || undefined,
+        currentStart,
+        currentEnd,
+        previousStart: validDate(params.compareStart) || inferredPrevious.previousStart,
+        previousEnd: validDate(params.compareEnd) || inferredPrevious.previousEnd
+      })
+    : buildReportSchema();
 
   if (user) {
     const shops = await prisma.shop.findMany({ where: { userId: user.id }, select: { id: true } });
