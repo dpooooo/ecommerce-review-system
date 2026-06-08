@@ -2,8 +2,9 @@ import { AlertTriangle, BarChart3, Boxes, Megaphone, TrendingUp } from "lucide-r
 import type { LucideIcon } from "lucide-react";
 import { Card } from "@/components/common/Card";
 import { ProductInsightAnalysis } from "@/components/reports/ProductInsightAnalysis";
+import { PromotionInsightAnalysis } from "@/components/reports/PromotionInsightAnalysis";
 import { ReportChart } from "@/components/reports/ReportChart";
-import { formatMoney, formatNumber, formatPercent } from "@/lib/format";
+import { formatMoney, formatNumber } from "@/lib/format";
 
 type ReportModuleData = {
   key: string;
@@ -18,7 +19,7 @@ type ReportModuleData = {
 type TableColumn = {
   key: string;
   label: string;
-  format?: "money" | "number" | "percent";
+  format?: "money" | "number";
   align?: "left" | "right";
 };
 
@@ -42,7 +43,6 @@ function text(value: unknown) {
 function formatCell(value: unknown, format?: TableColumn["format"]) {
   if (format === "money") return formatMoney(asNumber(value));
   if (format === "number") return formatNumber(asNumber(value));
-  if (format === "percent") return formatPercent(asNumber(value));
   return text(value);
 }
 
@@ -82,10 +82,9 @@ function SimpleTable({
               <tr key={index} className="hover:bg-slate-50/80">
                 {columns.map((column) => {
                   const value = row[column.key];
-                  const numericValue = asNumber(value);
-                  const colored = column.key === "contribution" || column.key === "roi" || column.key === "refundRate";
+                  const colored = column.key === "contribution";
                   const colorClass = colored
-                    ? numericValue < 0
+                    ? asNumber(value) < 0
                       ? "text-red-600"
                       : "text-emerald-600"
                     : "text-slate-700";
@@ -109,24 +108,6 @@ function SimpleTable({
   );
 }
 
-function MetricPill({
-  label,
-  value,
-  tone = "slate"
-}: {
-  label: string;
-  value: string;
-  tone?: "slate" | "brand" | "emerald" | "red";
-}) {
-  const toneClass = tone === "brand" ? "bg-brand-50 text-brand-700" : tone === "emerald" ? "bg-emerald-50 text-emerald-700" : tone === "red" ? "bg-red-50 text-red-700" : "bg-slate-50 text-slate-700";
-  return (
-    <div className={`rounded-md px-3 py-2 ${toneClass}`}>
-      <div className="text-xs opacity-80">{label}</div>
-      <div className="mt-1 text-sm font-semibold">{value}</div>
-    </div>
-  );
-}
-
 function AttributionTable({ rows }: { rows: Array<Record<string, unknown>> }) {
   return (
     <SimpleTable
@@ -139,59 +120,6 @@ function AttributionTable({ rows }: { rows: Array<Record<string, unknown>> }) {
         { key: "direction", label: "方向" }
       ]}
     />
-  );
-}
-
-function PromotionDetail({ tables }: { tables: Array<Record<string, unknown>> }) {
-  const planRows = (tables[0]?.data || []) as Array<Record<string, unknown>>;
-  const audienceRows = (tables[1]?.data || []) as Array<Record<string, unknown>>;
-  const spend = planRows.reduce((sum, row) => sum + asNumber(row.spend), 0);
-  const revenue = planRows.reduce((sum, row) => sum + asNumber(row.revenue), 0);
-  const roi = spend ? revenue / spend : 0;
-
-  return (
-    <div className="mt-5 space-y-5">
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
-        <MetricPill label="推广计划" value={`${formatNumber(planRows.length)} 个`} />
-        <MetricPill label="推广花费" value={formatMoney(spend)} tone="brand" />
-        <MetricPill label="成交金额" value={formatMoney(revenue)} tone="emerald" />
-        <MetricPill label="整体 ROI" value={roi.toFixed(2)} tone={roi >= 1 ? "emerald" : "red"} />
-      </div>
-      <div>
-        <div className="text-sm font-semibold text-slate-900">推广计划表现</div>
-        <SimpleTable
-          rows={planRows}
-          columns={[
-            { key: "planName", label: "计划" },
-            { key: "spend", label: "花费", format: "money", align: "right" },
-            { key: "revenue", label: "成交金额", format: "money", align: "right" },
-            { key: "roi", label: "ROI", format: "number", align: "right" },
-            { key: "orders", label: "订单", format: "number", align: "right" },
-            { key: "orderCost", label: "订单成本", format: "money", align: "right" },
-            { key: "addCartRate", label: "加购率", format: "percent", align: "right" },
-            { key: "newCustomerOrders", label: "新客订单", format: "number", align: "right" }
-          ]}
-        />
-      </div>
-      {audienceRows.length ? (
-        <div>
-          <div className="text-sm font-semibold text-slate-900">推广人群表现</div>
-          <SimpleTable
-            rows={audienceRows}
-            columns={[
-              { key: "planName", label: "计划" },
-              { key: "unitName", label: "单元" },
-              { key: "audienceName", label: "人群" },
-              { key: "spend", label: "花费", format: "money", align: "right" },
-              { key: "revenue", label: "成交金额", format: "money", align: "right" },
-              { key: "roi", label: "ROI", format: "number", align: "right" },
-              { key: "orderCost", label: "订单成本", format: "money", align: "right" },
-              { key: "conversionRate", label: "转化率", format: "percent", align: "right" }
-            ]}
-          />
-        </div>
-      ) : null}
-    </div>
   );
 }
 
@@ -238,7 +166,7 @@ export function ReportModule({ module, index }: { module: ReportModuleData; inde
         />
       ) : null}
       {module.key === "product_analysis" ? <ProductInsightAnalysis table={firstTable} /> : null}
-      {module.key === "promotion_detail" ? <PromotionDetail tables={module.tables || []} /> : null}
+      {module.key === "promotion_detail" ? <PromotionInsightAnalysis tables={module.tables || []} /> : null}
     </Card>
   );
 }
