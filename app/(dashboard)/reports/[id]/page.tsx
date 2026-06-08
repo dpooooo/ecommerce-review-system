@@ -3,7 +3,6 @@ import { ActionList } from "@/components/dashboard/ActionList";
 import { Card } from "@/components/common/Card";
 import { AttributionInsightSection } from "@/components/reports/AttributionInsightSection";
 import { ReportActions } from "@/components/reports/ReportActions";
-import { ReportInsightCharts } from "@/components/reports/ReportInsightCharts";
 import { ReportInsightSummary } from "@/components/reports/ReportInsightSummary";
 import { ReportModule } from "@/components/reports/ReportModule";
 import { buildReportSchema } from "@/lib/analysis/report/reportBuilder";
@@ -72,7 +71,6 @@ export default async function ReportDetailPage({ params }: { params: Promise<{ i
       </div>
 
       <ReportInsightSummary report={report} />
-      <ReportInsightCharts report={report} showAttribution={false} />
       <AttributionInsightSection report={report} />
 
       <div className="space-y-4">
