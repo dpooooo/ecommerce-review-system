@@ -65,6 +65,22 @@ function sumNormalizedRevenue(rows: Row[]) {
   return rows.reduce((total, row) => total + normalizedRevenue(row), 0);
 }
 
+function promotionSummaryFromTables(tables: Row[]) {
+  const summary = (tables[2]?.summary || tables.find((table) => table.summary)?.summary || {}) as Row;
+  if (!Object.keys(summary).length) return null;
+  return {
+    spend: asNumber(summary.spend),
+    revenue: asNumber(summary.promoGmv || summary.revenue),
+    orders: asNumber(summary.orders),
+    impressions: asNumber(summary.impressions),
+    clicks: asNumber(summary.clicks),
+    adVisitors: asNumber(summary.adVisitors || summary.traffic),
+    roi: asNumber(summary.roi),
+    ctr: asNumber(summary.ctr),
+    cpc: asNumber(summary.cpc)
+  };
+}
+
 function suspiciousRevenueRows(rows: Row[]) {
   return rows.filter((row) => {
     const rawRevenue = asNumber(row.revenue);
@@ -358,18 +374,28 @@ function PlanTable({ rows }: { rows: Row[] }) {
 export function PromotionInsightAnalysis({ tables }: { tables: Row[] }) {
   const planRows = (tables[0]?.data || []) as Row[];
   const audienceRows = (tables[1]?.data || []) as Row[];
+  const promotionSummary = promotionSummaryFromTables(tables);
   const suspiciousRows = suspiciousRevenueRows(planRows);
-  const totals = {
-    spend: sum(planRows, "spend"),
-    revenue: sumNormalizedRevenue(planRows),
-    orders: sum(planRows, "orders"),
-    impressions: sum(planRows, "impressions"),
-    clicks: sum(planRows, "clicks"),
-    adVisitors: sum(planRows, "adVisitors")
-  };
-  const roi = safeRate(totals.revenue, totals.spend);
-  const ctr = safeRate(totals.clicks, totals.impressions);
-  const cpc = safeRate(totals.spend, totals.clicks);
+  const totals = promotionSummary
+    ? {
+        spend: promotionSummary.spend || sum(planRows, "spend"),
+        revenue: promotionSummary.revenue || sumNormalizedRevenue(planRows),
+        orders: promotionSummary.orders || sum(planRows, "orders"),
+        impressions: promotionSummary.impressions || sum(planRows, "impressions"),
+        clicks: promotionSummary.clicks || sum(planRows, "clicks"),
+        adVisitors: promotionSummary.adVisitors || sum(planRows, "adVisitors")
+      }
+    : {
+        spend: sum(planRows, "spend"),
+        revenue: sumNormalizedRevenue(planRows),
+        orders: sum(planRows, "orders"),
+        impressions: sum(planRows, "impressions"),
+        clicks: sum(planRows, "clicks"),
+        adVisitors: sum(planRows, "adVisitors")
+      };
+  const roi = promotionSummary?.roi || safeRate(totals.revenue, totals.spend);
+  const ctr = promotionSummary?.ctr || safeRate(totals.clicks, totals.impressions);
+  const cpc = promotionSummary?.cpc || safeRate(totals.spend, totals.clicks);
   const lowRoiPlans = planRows.filter((row) => asNumber(row.spend) > 0 && normalizedRoi(row) < 1);
   const wasteAudiences = audienceRows.filter((row) => asNumber(row.spend) > 0 && (normalizedRevenue(row) <= 0 || normalizedRoi(row) < 1));
   const problems = [

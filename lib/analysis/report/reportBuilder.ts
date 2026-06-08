@@ -16,6 +16,7 @@ export function buildReportSchema(options?: {
   previousProducts?: Array<Record<string, number | string>>;
   promotionPlans?: Array<Record<string, number | string>>;
   promotionAudiences?: Array<Record<string, number | string>>;
+  promotionSummary?: Record<string, number>;
   trendData?: Array<{ date: string; gmv: number; gsv: number }>;
   period?: {
     current: { start: string; end: string };
@@ -29,6 +30,17 @@ export function buildReportSchema(options?: {
   const reportTrendData = options?.trendData || trendData;
   const reportPromotionPlans = options?.promotionPlans || promotionPlans;
   const reportPromotionAudiences = options?.promotionAudiences || [];
+  const reportPromotionSummary = options?.promotionSummary || {
+    spend: current.spend || 0,
+    promoGmv: (current.spend || 0) * (current.roi || 0),
+    roi: current.roi || 0,
+    impressions: 0,
+    clicks: 0,
+    traffic: 0,
+    orders: 0,
+    ctr: 0,
+    cpc: 0
+  };
   const anomalies = buildAnomalyCenter(current, previous, products.anomalies);
   const actionItems = buildActionItems(anomalies);
 
@@ -53,7 +65,7 @@ export function buildReportSchema(options?: {
       { key: "gmv_attribution", title: "GMV 归因分析", summary: "GMV 增长主要由客单价提升和流量增长贡献。", tables: [{ data: gmvAttribution(current, previous) }] },
       { key: "gsv_attribution", title: "GSV 影响分析", summary: "成交增长贡献为正，退款增长对 GSV 形成负向影响。", tables: [{ data: gsvAttribution(current, previous) }] },
       { key: "product_analysis", title: "商品分析", summary: "按商品结构、GMV贡献、增长变化和风险标签定位主推、潜力与待治理商品。", tables: [{ topProducts: products.topProducts, productRows: products.productRows, riskProducts: products.riskProducts, quadrants: products.quadrants, summary: products.summary }] },
-      { key: "promotion_detail", title: "推广计划与人群分析", summary: "按计划和人群拆解投产比、订单成本、加购与直接/间接成交，定位高价值与浪费投放。", tables: [{ data: reportPromotionPlans }, { data: reportPromotionAudiences }] }
+      { key: "promotion_detail", title: "推广计划与人群分析", summary: "按计划和人群拆解投产比、订单成本、加购与直接/间接成交，定位高价值与浪费投放。", tables: [{ data: reportPromotionPlans }, { data: reportPromotionAudiences }, { summary: reportPromotionSummary }] }
     ],
     anomalies,
     actionItems

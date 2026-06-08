@@ -58,7 +58,23 @@ async function promotionSummary(shopId: string, start: Date, end: Date) {
   const rows = await prisma.promotionMetric.findMany({ where: { shopId, date: { gte: start, lte: end } } });
   const spend = rows.reduce((sum, row) => sum + row.spend, 0);
   const promoGmv = rows.reduce((sum, row) => sum + row.promoGmv, 0);
-  return { spend, roi: safeRate(promoGmv, spend) };
+  const impressions = rows.reduce((sum, row) => sum + row.impressions, 0);
+  const clicks = rows.reduce((sum, row) => sum + row.clicks, 0);
+  const traffic = rows.reduce((sum, row) => sum + row.traffic, 0);
+  const orders = rows.reduce((sum, row) => sum + row.orders, 0);
+  return {
+    spend,
+    promoGmv,
+    revenue: promoGmv,
+    roi: safeRate(promoGmv, spend),
+    impressions,
+    clicks,
+    traffic,
+    adVisitors: traffic,
+    orders,
+    ctr: safeRate(clicks, impressions),
+    cpc: safeRate(spend, clicks)
+  };
 }
 
 export async function buildReportFromDb(params: {
@@ -204,6 +220,7 @@ export async function buildReportFromDb(params: {
       addCartRate: item.addCartRate,
       orderCost: item.orderCost
     })),
+    promotionSummary: currentPromotion,
     trendData: currentShopRows.map((item) => ({
       date: `${item.date.getMonth() + 1}-${String(item.date.getDate()).padStart(2, "0")}`,
       gmv: item.gmv / 10000,
