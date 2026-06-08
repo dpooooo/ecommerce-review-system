@@ -15,15 +15,26 @@ function metricValue(key: string, value: number) {
 }
 
 function metricTone(metric: MetricComparison) {
-  if (metric.key === "refundAmount" || metric.key === "refundRate") {
-    return metric.trend === "up" ? "text-red-600 bg-red-50" : metric.trend === "down" ? "text-emerald-600 bg-emerald-50" : "text-slate-500 bg-slate-50";
+  const refundMetric = metric.key === "refundAmount" || metric.key === "refundRate";
+  if (refundMetric) {
+    if (metric.trend === "up") return "text-red-600 bg-red-50";
+    if (metric.trend === "down") return "text-emerald-600 bg-emerald-50";
+    return "text-slate-500 bg-slate-50";
   }
-  return metric.trend === "up" ? "text-emerald-600 bg-emerald-50" : metric.trend === "down" ? "text-red-600 bg-red-50" : "text-slate-500 bg-slate-50";
+  if (metric.trend === "up") return "text-emerald-600 bg-emerald-50";
+  if (metric.trend === "down") return "text-red-600 bg-red-50";
+  return "text-slate-500 bg-slate-50";
 }
 
 function isRiskMetric(metric: MetricComparison) {
   if (metric.key === "refundAmount" || metric.key === "refundRate") return metric.trend === "up";
   return metric.trend === "down";
+}
+
+function statusMeta(status: ReportSchema["executiveSummary"]["status"]) {
+  if (status === "risk") return { text: "高风险", className: "bg-red-50 text-red-700" };
+  if (status === "warning") return { text: "需关注", className: "bg-amber-50 text-amber-700" };
+  return { text: "经营正常", className: "bg-emerald-50 text-emerald-700" };
 }
 
 function SectionList({
@@ -57,8 +68,7 @@ function SectionList({
 
 export function ReportInsightSummary({ report }: { report: ReportSchema }) {
   const riskMetrics = report.metrics.filter(isRiskMetric).slice(0, 3);
-  const statusTone = report.executiveSummary.status === "risk" ? "bg-red-50 text-red-700" : report.executiveSummary.status === "warning" ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700";
-  const statusText = report.executiveSummary.status === "risk" ? "高风险" : report.executiveSummary.status === "warning" ? "需关注" : "经营正常";
+  const status = statusMeta(report.executiveSummary.status);
   const riskItems = riskMetrics.length
     ? riskMetrics.map((metric) => `${metric.name} ${metric.displayChange}`)
     : ["暂无高优先级指标风险，继续观察转化、退款和投放效率。"];
@@ -70,9 +80,9 @@ export function ReportInsightSummary({ report }: { report: ReportSchema }) {
           <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
             <div className="max-w-4xl">
               <div className="flex flex-wrap items-center gap-2">
-                <span className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold ${statusTone}`}>
+                <span className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold ${status.className}`}>
                   <CheckCircle2 size={14} />
-                  {statusText}
+                  {status.text}
                 </span>
                 <span className="rounded-md bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
                   {report.shop.name} · {report.period.current.start} 至 {report.period.current.end}
