@@ -36,10 +36,20 @@ async function loadReport(id: string): Promise<ReportSchema> {
   return schema;
 }
 
+function hasMeaningfulTrend(report: ReportSchema) {
+  const trendData = (report.modules.find((module) => module.key === "trend")?.charts?.[0]?.data || []) as Array<Record<string, unknown>>;
+  return new Set(trendData.map((item) => String(item.date || ""))).size > 1;
+}
+
 export default async function ReportDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const report = await loadReport(id);
-  const visibleModules = report.modules.filter((module) => module.key !== "gmv_attribution" && module.key !== "gsv_attribution");
+  const showTrend = hasMeaningfulTrend(report);
+  const visibleModules = report.modules.filter((module) => {
+    if (module.key === "gmv_attribution" || module.key === "gsv_attribution") return false;
+    if (module.key === "trend" && !showTrend) return false;
+    return true;
+  });
   const moduleLinks = [
     { href: "#section-attribution-insight", label: "GMV / GSV归因分析", index: "01" },
     ...visibleModules.map((module, index) => ({
