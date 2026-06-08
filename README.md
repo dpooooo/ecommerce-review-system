@@ -90,10 +90,11 @@ pm2 restart ecommerce-review-system
 ```
 
 日常更新：
+```bash
 git pull origin main
 npm run build
 pm2 restart ecommerce-review-system --update-env
-
+```
 
 ## 项目结构
 
