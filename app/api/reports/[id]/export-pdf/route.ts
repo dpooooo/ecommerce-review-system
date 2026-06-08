@@ -1,14 +1,11 @@
 import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth/session";
-import { prisma } from "@/lib/db/prisma";
-import { buildReportSchema } from "@/lib/analysis/report/reportBuilder";
-import type { ReportSchema } from "@/lib/analysis/types";
 import { reportToHtml } from "@/lib/analysis/report/reportExport";
+import { loadFreshReport } from "@/lib/analysis/report/reportLoader";
 
 async function exportReport(id: string) {
   const user = await getSessionUser();
-  const savedReport = user ? await prisma.analysisReport.findFirst({ where: { id, userId: user.id } }) : null;
-  const report = (savedReport?.reportJson as ReportSchema | undefined) || buildReportSchema({ reportId: id });
+  const report = await loadFreshReport(id, user?.id);
   return new NextResponse(reportToHtml(report), {
     headers: {
       "Content-Type": "text/html; charset=utf-8",

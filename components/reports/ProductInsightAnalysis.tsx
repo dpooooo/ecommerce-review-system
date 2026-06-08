@@ -132,6 +132,17 @@ export function ProductInsightAnalysis({ table }: { table: Record<string, unknow
   const riskProducts = ((table.riskProducts || []) as Array<Record<string, unknown>>);
   const top5Share = asNumber(summary.top5Share);
 
+  if (!productRows.length && !quadrants.some((item) => asNumber(item.count) > 0)) {
+    return (
+      <div className="mt-5 rounded-md border border-dashed border-slate-300 bg-slate-50 p-5">
+        <div className="text-sm font-semibold text-slate-950">暂无商品明细数据</div>
+        <p className="mt-2 text-sm leading-6 text-slate-500">
+          当前报告周期内没有可用于商品结构分析的商品数据。请确认已上传对应店铺和周期的商品数据，或切换到有商品明细的周期后重新查看报告。
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="mt-5 space-y-6">
       <div>

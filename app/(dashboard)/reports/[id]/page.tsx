@@ -5,35 +5,9 @@ import { AttributionInsightSection } from "@/components/reports/AttributionInsig
 import { ReportActions } from "@/components/reports/ReportActions";
 import { ReportInsightSummary } from "@/components/reports/ReportInsightSummary";
 import { ReportModule } from "@/components/reports/ReportModule";
-import { buildReportSchema } from "@/lib/analysis/report/reportBuilder";
+import { loadFreshReport } from "@/lib/analysis/report/reportLoader";
 import type { ReportSchema } from "@/lib/analysis/types";
 import { getSessionUser } from "@/lib/auth/session";
-import { prisma } from "@/lib/db/prisma";
-
-async function loadReport(id: string): Promise<ReportSchema> {
-  const user = await getSessionUser();
-  if (!user) return buildReportSchema({ reportId: id });
-  const report = await prisma.analysisReport.findFirst({
-    where: { id, userId: user.id },
-    include: { actionItems: true }
-  });
-  const schema = (report?.reportJson as ReportSchema | undefined) || buildReportSchema({ reportId: id });
-  if (report?.actionItems.length) {
-    schema.actionItems = report.actionItems.map((item) => ({
-      id: item.id,
-      priority: item.priority,
-      title: item.title,
-      action: item.action,
-      targetMetric: item.targetMetric,
-      estimatedImpact: item.estimatedImpact,
-      owner: item.owner,
-      dueDate: item.dueDate?.toISOString(),
-      status: item.status,
-      sourceEvidence: item.sourceEvidence
-    }));
-  }
-  return schema;
-}
 
 function hasMeaningfulTrend(report: ReportSchema) {
   const trendData = (report.modules.find((module) => module.key === "trend")?.charts?.[0]?.data || []) as Array<Record<string, unknown>>;
@@ -42,7 +16,8 @@ function hasMeaningfulTrend(report: ReportSchema) {
 
 export default async function ReportDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const report = await loadReport(id);
+  const user = await getSessionUser();
+  const report = await loadFreshReport(id, user?.id);
   const showTrend = hasMeaningfulTrend(report);
   const visibleModules = report.modules.filter((module) => {
     if (module.key === "gmv_attribution" || module.key === "gsv_attribution") return false;
