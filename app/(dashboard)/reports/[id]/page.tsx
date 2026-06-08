@@ -1,6 +1,7 @@
 import { AnomalyList } from "@/components/dashboard/AnomalyList";
 import { ActionList } from "@/components/dashboard/ActionList";
 import { Card } from "@/components/common/Card";
+import { AttributionInsightSection } from "@/components/reports/AttributionInsightSection";
 import { ReportActions } from "@/components/reports/ReportActions";
 import { ReportInsightCharts } from "@/components/reports/ReportInsightCharts";
 import { ReportInsightSummary } from "@/components/reports/ReportInsightSummary";
@@ -38,11 +39,15 @@ async function loadReport(id: string): Promise<ReportSchema> {
 export default async function ReportDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const report = await loadReport(id);
-  const moduleLinks = report.modules.map((module, index) => ({
-    href: `#section-${module.key}`,
-    label: module.title,
-    index: String(index + 1).padStart(2, "0")
-  }));
+  const visibleModules = report.modules.filter((module) => module.key !== "gmv_attribution" && module.key !== "gsv_attribution");
+  const moduleLinks = [
+    { href: "#section-attribution-insight", label: "GMV / GSV归因分析", index: "01" },
+    ...visibleModules.map((module, index) => ({
+      href: `#section-${module.key}`,
+      label: module.title,
+      index: String(index + 2).padStart(2, "0")
+    }))
+  ];
 
   return (
     <div className="space-y-6">
@@ -57,14 +62,15 @@ export default async function ReportDetailPage({ params }: { params: Promise<{ i
       </div>
 
       <ReportInsightSummary report={report} />
-      <ReportInsightCharts report={report} />
+      <ReportInsightCharts report={report} showAttribution={false} />
+      <AttributionInsightSection report={report} />
 
       <div className="space-y-4">
         <Card className="p-5">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
             <div>
               <h2 className="text-lg font-semibold text-slate-950">专题诊断</h2>
-              <p className="mt-1 text-sm text-slate-500">按趋势、归因、商品和推广拆解本期表现，保留可追溯的明细证据。</p>
+              <p className="mt-1 text-sm text-slate-500">按趋势、商品和推广拆解本期表现，保留可追溯的明细证据。</p>
             </div>
             <div className="flex flex-wrap gap-2">
               {moduleLinks.map((item) => (
@@ -80,8 +86,8 @@ export default async function ReportDetailPage({ params }: { params: Promise<{ i
             </div>
           </div>
         </Card>
-        {report.modules.map((module, index) => (
-          <ReportModule key={module.key} module={module} index={index + 1} />
+        {visibleModules.map((module, index) => (
+          <ReportModule key={module.key} module={module} index={index + 2} />
         ))}
       </div>
 

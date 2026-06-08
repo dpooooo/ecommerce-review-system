@@ -31,7 +31,7 @@ function firstTable(report: ReportSchema, key: string) {
   return (report.modules.find((item) => item.key === key)?.tables?.[0] || {}) as Record<string, unknown>;
 }
 
-export function ReportInsightCharts({ report }: { report: ReportSchema }) {
+export function ReportInsightCharts({ report, showAttribution = true }: { report: ReportSchema; showAttribution?: boolean }) {
   const trendData = firstChartData(report, "trend");
   const attributionData = firstTableData(report, "gmv_attribution");
   const productTable = firstTable(report, "product_analysis");
@@ -157,7 +157,7 @@ export function ReportInsightCharts({ report }: { report: ReportSchema }) {
 
   return (
     <section className="grid grid-cols-1 gap-6 xl:grid-cols-6">
-      <Card className="p-5 xl:col-span-4">
+      <Card className={`p-5 ${showAttribution ? "xl:col-span-4" : "xl:col-span-6"}`}>
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h2 className="font-semibold text-slate-950">GMV / GSV 趋势</h2>
@@ -167,10 +167,12 @@ export function ReportInsightCharts({ report }: { report: ReportSchema }) {
         </div>
         <EChart option={trendOption} className="h-80 w-full" />
       </Card>
-      <Card className="p-5 xl:col-span-2">
-        <h2 className="mb-4 font-semibold text-slate-950">GMV 归因</h2>
-        <EChart option={attributionOption} className="h-80 w-full" />
-      </Card>
+      {showAttribution ? (
+        <Card className="p-5 xl:col-span-2">
+          <h2 className="mb-4 font-semibold text-slate-950">GMV 归因</h2>
+          <EChart option={attributionOption} className="h-80 w-full" />
+        </Card>
+      ) : null}
       <Card className="p-5 xl:col-span-3">
         <h2 className="mb-4 font-semibold text-slate-950">商品 GMV Top</h2>
         <EChart option={productOption} className="h-72 w-full" />
