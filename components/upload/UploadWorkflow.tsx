@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
   CheckCircle2,
   ChevronDown,
@@ -159,6 +159,7 @@ function dateOnly(value: string) {
 }
 
 export function UploadWorkflow() {
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [shops, setShops] = useState<Shop[]>([]);
   const [shopId, setShopId] = useState("");
   const [platform, setPlatform] = useState("TMALL");
@@ -201,7 +202,7 @@ export function UploadWorkflow() {
     if (!grains.includes(timeGrain)) setTimeGrain(grains[0]);
   }, [reportType, timeGrain]);
 
-  function resetUpload(nextMode?: "template" | "raw") {
+  function resetUpload(nextMode?: "template" | "raw", clearFile = true) {
     if (nextMode) {
       setUploadMode(nextMode);
       setReportType((current) => {
@@ -209,7 +210,10 @@ export function UploadWorkflow() {
         return current === "auto" ? "shop" : current;
       });
     }
-    setFile(null);
+    if (clearFile) {
+      setFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
     setUploadResult(null);
     setMapping([]);
     setStatus("idle");
@@ -227,12 +231,14 @@ export function UploadWorkflow() {
 
   async function upload(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!file) {
+    const selectedFile = file || fileInputRef.current?.files?.[0] || null;
+    if (!selectedFile) {
       setStatus("error");
       setMessage("请选择要上传的 Excel 或 CSV 文件。");
       return;
     }
 
+    setFile(selectedFile);
     setStatus("uploading");
     setMessage("正在上传并校验文件...");
     const form = new FormData();
@@ -243,7 +249,7 @@ export function UploadWorkflow() {
     form.set("timeGrain", uploadMode === "template" ? timeGrain : "period");
     form.set("periodStart", periodStart);
     form.set("periodEnd", periodEnd);
-    form.set("file", file);
+    form.set("file", selectedFile);
 
     const response = await fetch("/api/uploads", { method: "POST", body: form });
     const data = await response.json();
@@ -340,7 +346,7 @@ export function UploadWorkflow() {
                   type="button"
                   onClick={() => {
                     setTimeGrain(item.value);
-                    resetUpload();
+                    resetUpload(undefined, false);
                   }}
                   className={`rounded-md border px-3 py-2 text-left text-sm ${timeGrain === item.value ? "border-brand-500 bg-brand-50 text-brand-700" : "border-slate-200 bg-white text-slate-600"}`}
                   title={item.description}
@@ -359,7 +365,7 @@ export function UploadWorkflow() {
                   type="button"
                   onClick={() => {
                     setReportType(item.value);
-                    resetUpload();
+                    resetUpload(undefined, false);
                   }}
                   className="block w-full text-left"
                 >
@@ -440,7 +446,7 @@ export function UploadWorkflow() {
             <div className="mt-1 flex h-10 items-center gap-3 rounded-md border border-slate-200 px-3 text-sm">
               <FileSpreadsheet size={16} className="text-brand-600" />
               <span className="flex-1 truncate text-slate-600">{file?.name || "支持 .xlsx / .xls / .csv"}</span>
-              <input type="file" accept=".xlsx,.xls,.csv" onChange={onFileChange} className="w-48 text-sm" />
+              <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" onChange={onFileChange} className="w-48 text-sm" />
             </div>
           </label>
 
